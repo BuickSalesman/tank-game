@@ -77,4 +77,10 @@ canvas.addEventListener("mouseup", () => {
   }
 });
 
-canvas.addEventListener("mouseout", () => (isDrawing = false));
+canvas.addEventListener("mouseout", () => {
+  if (isDrawing) {
+    connectStartToEnd();
+    shapeCount++; // Increment shape count when drawing stops
+    isDrawing = false; // Stop drawing
+  }
+});
