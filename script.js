@@ -45,7 +45,7 @@ function drawReactors() {
 }
 
 function drawTanks() {
-  const tankSize = 30;
+  const tankSize = 25;
   const reactorRadius = 20;
   const reactorDistance = 50;
   const tankOffset = 10; // Space between reactor and tank
