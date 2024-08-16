@@ -27,14 +27,17 @@ let startX = 0;
 let startY = 0;
 let lastX = 0;
 let lastY = 0;
-let shapeCount = 0;
+let shapeCountBelow = 0;
+let shapeCountAbove = 0;
 const maxShapes = 5;
+let isDrawingBelow = true; // Initial state allows drawing below the line
 
 function draw(e) {
   if (!isDrawing) return;
 
-  // Check if the current position is below the dividing line
-  if (e.offsetY <= canvas.height / 2) return;
+  // Check if the current position is within the allowed region
+  if (isDrawingBelow && e.offsetY <= canvas.height / 2) return;
+  if (!isDrawingBelow && e.offsetY > canvas.height / 2) return;
 
   ctx.beginPath();
   ctx.moveTo(lastX, lastY);
@@ -52,12 +55,17 @@ function connectStartToEnd() {
 }
 
 canvas.addEventListener("mousedown", (e) => {
-  if (shapeCount >= maxShapes) return; // Prevent drawing if max shapes reached
+  if (isDrawingBelow && shapeCountBelow >= maxShapes) return; // Prevent drawing if max shapes reached below the line
+  if (!isDrawingBelow && shapeCountAbove >= maxShapes) return; // Prevent drawing if max shapes reached above the line
 
   const dividingLine = canvas.height / 2;
 
-  // Only start drawing if the mouse is below the dividing line
-  if (e.offsetY > dividingLine) {
+  // Determine where to start drawing based on the current state
+  if (isDrawingBelow && e.offsetY > dividingLine) {
+    isDrawing = true;
+    [startX, startY] = [e.offsetX, e.offsetY];
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+  } else if (!isDrawingBelow && e.offsetY <= dividingLine) {
     isDrawing = true;
     [startX, startY] = [e.offsetX, e.offsetY];
     [lastX, lastY] = [e.offsetX, e.offsetY];
@@ -68,10 +76,16 @@ canvas.addEventListener("mousemove", draw);
 
 canvas.addEventListener("mouseup", () => {
   if (isDrawing) {
-    // Ensure the last point is also below the dividing line
-    if (lastY > canvas.height / 2) {
+    if ((isDrawingBelow && lastY > canvas.height / 2) || (!isDrawingBelow && lastY <= canvas.height / 2)) {
       connectStartToEnd(); // Connect the end of the drawn line to the start
-      shapeCount++; // Increment the shape counter after completing a shape
+      if (isDrawingBelow) {
+        shapeCountBelow++; // Increment the shape counter for below
+        if (shapeCountBelow >= maxShapes) {
+          isDrawingBelow = false; // Switch to drawing above the line
+        }
+      } else {
+        shapeCountAbove++; // Increment the shape counter for above
+      }
     }
     isDrawing = false;
   }
@@ -80,7 +94,14 @@ canvas.addEventListener("mouseup", () => {
 canvas.addEventListener("mouseout", () => {
   if (isDrawing) {
     connectStartToEnd();
-    shapeCount++; // Increment shape count when drawing stops
-    isDrawing = false; // Stop drawing
+    if (isDrawingBelow) {
+      shapeCountBelow++; // Increment shape count for below when drawing stops
+      if (shapeCountBelow >= maxShapes) {
+        isDrawingBelow = false; // Switch to drawing above the line
+      }
+    } else {
+      shapeCountAbove++; // Increment shape count for above
+    }
+    isDrawing = false;
   }
 });
