@@ -2,6 +2,7 @@
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+let path = [];
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -48,10 +49,10 @@ function drawTanks() {
   const tankSize = 25;
   const reactorRadius = 20;
   const reactorDistance = 50;
-  const tankOffset = 10; // Space between reactor and tank
+  const tankOffset = 10;
 
-  const topY = canvas.height * 0.025; // 10% from the top
-  const bottomY = canvas.height * 0.975; // 10% from the bottom
+  const topY = canvas.height * 0.025; // from the top
+  const bottomY = canvas.height * 0.975; // from the bottom
   const centerX = canvas.width / 2;
 
   // Draw tanks below top reactors
@@ -75,7 +76,7 @@ function drawTanks() {
   );
 }
 
-window.addEventListener("resize", resizeCanvas);
+// window.addEventListener("resize", resizeCanvas);
 
 resizeCanvas();
 
@@ -97,7 +98,6 @@ function draw(e) {
   if (isDrawingBelow && e.offsetY <= canvas.height / 2) return;
   if (!isDrawingBelow && e.offsetY > canvas.height / 2) return;
 
-  ctx.beginPath();
   ctx.moveTo(lastX, lastY);
   ctx.lineTo(e.offsetX, e.offsetY);
   ctx.stroke();
@@ -106,10 +106,12 @@ function draw(e) {
 }
 
 function connectStartToEnd() {
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
+  // ctx.beginPath();
+  // ctx.moveTo(lastX, lastY);
   ctx.lineTo(startX, startY);
   ctx.stroke();
+
+  ctx.fillStyle = "red";
 }
 
 canvas.addEventListener("mousedown", (e) => {
@@ -121,10 +123,12 @@ canvas.addEventListener("mousedown", (e) => {
   // Determine where to start drawing based on the current state
   if (isDrawingBelow && e.offsetY > dividingLine) {
     isDrawing = true;
+    ctx.beginPath();
     [startX, startY] = [e.offsetX, e.offsetY];
     [lastX, lastY] = [e.offsetX, e.offsetY];
   } else if (!isDrawingBelow && e.offsetY <= dividingLine) {
     isDrawing = true;
+    ctx.beginPath();
     [startX, startY] = [e.offsetX, e.offsetY];
     [lastX, lastY] = [e.offsetX, e.offsetY];
   }
@@ -163,3 +167,44 @@ canvas.addEventListener("mouseout", () => {
     isDrawing = false;
   }
 });
+
+// let path = [];
+
+// // Start drawing
+// canvas.addEventListener("mousedown", (event) => {
+//   drawing = true;
+//   path = [{ x: event.offsetX, y: event.offsetY }];
+//   ctx.beginPath();
+//   ctx.moveTo(event.offsetX, event.offsetY);
+// });
+
+// // Track mouse movement to draw the path
+// canvas.addEventListener("mousemove", (event) => {
+//   if (drawing) {
+//     path.push({ x: event.offsetX, y: event.offsetY });
+//     ctx.lineTo(event.offsetX, event.offsetY);
+//     ctx.stroke();
+//   }
+// });
+
+// // Finish drawing and close the path
+// canvas.addEventListener("mouseup", () => {
+//   if (drawing) {
+//     ctx.lineTo(path[0].x, path[0].y); // Close the path
+//     ctx.closePath();
+//     ctx.fillStyle = "red";
+//     ctx.fill(); // Fill the shape with red
+//     drawing = false;
+//   }
+// });
+
+// // Optional: Handle case where mouse leaves the canvas while drawing
+// canvas.addEventListener("mouseleave", () => {
+//   if (drawing) {
+//     ctx.lineTo(path[0].x, path[0].y); // Close the path
+//     ctx.closePath();
+//     ctx.fillStyle = "red";
+//     ctx.fill(); // Fill the shape with red
+//     drawing = false;
+//   }
+// });
