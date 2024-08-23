@@ -1,12 +1,19 @@
-//CANVAS CODE HERE
-
+// JavaScript code to control the canvas
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+
+let shapeCount = 0; // Counter for the number of shapes drawn
+let isDrawingBelow = true; // Initial state allows drawing below the line
+let maxShapesBelow = 5;
+let maxShapesAbove = 5;
+let isDrawing = false;
 let path = [];
+let startX, startY, lastX, lastY;
 
 function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const gameContainer = document.getElementById("gameContainer");
+  canvas.width = gameContainer.clientWidth;
+  canvas.height = gameContainer.clientHeight;
 
   const dividingLine = canvas.height / 2;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -76,21 +83,10 @@ function drawTanks() {
   );
 }
 
-// window.addEventListener("resize", resizeCanvas);
-
+// Call resizeCanvas on load
 resizeCanvas();
 
-//DRAWING CODE HERE
-let isDrawing = false;
-let startX = 0;
-let startY = 0;
-let lastX = 0;
-let lastY = 0;
-let shapeCountBelow = 0;
-let shapeCountAbove = 0;
-const maxShapes = 5;
-let isDrawingBelow = true; // Initial state allows drawing below the line
-
+// Drawing logic (replacing previous drawing code)
 function draw(e) {
   if (!isDrawing) return;
 
@@ -98,25 +94,23 @@ function draw(e) {
   if (isDrawingBelow && e.offsetY <= canvas.height / 2) return;
   if (!isDrawingBelow && e.offsetY > canvas.height / 2) return;
 
-  ctx.moveTo(lastX, lastY);
   ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.strokeStyle = "black"; // Draw lines in black
   ctx.stroke();
 
   [lastX, lastY] = [e.offsetX, e.offsetY];
 }
 
 function connectStartToEnd() {
-  // ctx.beginPath();
-  // ctx.moveTo(lastX, lastY);
   ctx.lineTo(startX, startY);
   ctx.stroke();
 
   ctx.fillStyle = "red";
+  ctx.fill(); // Fill the shape with red
 }
 
 canvas.addEventListener("mousedown", (e) => {
-  if (isDrawingBelow && shapeCountBelow >= maxShapes) return; // Prevent drawing if max shapes reached below the line
-  if (!isDrawingBelow && shapeCountAbove >= maxShapes) return; // Prevent drawing if max shapes reached above the line
+  if (shapeCount >= 10) return; // Prevent drawing if max shapes reached
 
   const dividingLine = canvas.height / 2;
 
@@ -126,11 +120,13 @@ canvas.addEventListener("mousedown", (e) => {
     ctx.beginPath();
     [startX, startY] = [e.offsetX, e.offsetY];
     [lastX, lastY] = [e.offsetX, e.offsetY];
+    path = [{ x: e.offsetX, y: e.offsetY }];
   } else if (!isDrawingBelow && e.offsetY <= dividingLine) {
     isDrawing = true;
     ctx.beginPath();
     [startX, startY] = [e.offsetX, e.offsetY];
     [lastX, lastY] = [e.offsetX, e.offsetY];
+    path = [{ x: e.offsetX, y: e.offsetY }];
   }
 });
 
@@ -140,71 +136,28 @@ canvas.addEventListener("mouseup", () => {
   if (isDrawing) {
     if ((isDrawingBelow && lastY > canvas.height / 2) || (!isDrawingBelow && lastY <= canvas.height / 2)) {
       connectStartToEnd(); // Connect the end of the drawn line to the start
-      if (isDrawingBelow) {
-        shapeCountBelow++; // Increment the shape counter for below
-        if (shapeCountBelow >= maxShapes) {
-          isDrawingBelow = false; // Switch to drawing above the line
-        }
-      } else {
-        shapeCountAbove++; // Increment the shape counter for above
+      shapeCount++;
+
+      if (isDrawingBelow && shapeCount >= maxShapesBelow) {
+        isDrawingBelow = false; // Switch to drawing above the line
+      } else if (!isDrawingBelow && shapeCount >= maxShapesBelow + maxShapesAbove) {
+        shapeCount = 10; // Prevent any more drawing
       }
     }
     isDrawing = false;
   }
 });
 
-canvas.addEventListener("mouseout", () => {
+canvas.addEventListener("mouseleave", () => {
   if (isDrawing) {
     connectStartToEnd();
-    if (isDrawingBelow) {
-      shapeCountBelow++; // Increment shape count for below when drawing stops
-      if (shapeCountBelow >= maxShapes) {
-        isDrawingBelow = false; // Switch to drawing above the line
-      }
-    } else {
-      shapeCountAbove++; // Increment shape count for above
+    shapeCount++;
+
+    if (isDrawingBelow && shapeCount >= maxShapesBelow) {
+      isDrawingBelow = false; // Switch to drawing above the line
+    } else if (!isDrawingBelow && shapeCount >= maxShapesBelow + maxShapesAbove) {
+      shapeCount = 10; // Prevent any more drawing
     }
     isDrawing = false;
   }
 });
-
-// let path = [];
-
-// // Start drawing
-// canvas.addEventListener("mousedown", (event) => {
-//   drawing = true;
-//   path = [{ x: event.offsetX, y: event.offsetY }];
-//   ctx.beginPath();
-//   ctx.moveTo(event.offsetX, event.offsetY);
-// });
-
-// // Track mouse movement to draw the path
-// canvas.addEventListener("mousemove", (event) => {
-//   if (drawing) {
-//     path.push({ x: event.offsetX, y: event.offsetY });
-//     ctx.lineTo(event.offsetX, event.offsetY);
-//     ctx.stroke();
-//   }
-// });
-
-// // Finish drawing and close the path
-// canvas.addEventListener("mouseup", () => {
-//   if (drawing) {
-//     ctx.lineTo(path[0].x, path[0].y); // Close the path
-//     ctx.closePath();
-//     ctx.fillStyle = "red";
-//     ctx.fill(); // Fill the shape with red
-//     drawing = false;
-//   }
-// });
-
-// // Optional: Handle case where mouse leaves the canvas while drawing
-// canvas.addEventListener("mouseleave", () => {
-//   if (drawing) {
-//     ctx.lineTo(path[0].x, path[0].y); // Close the path
-//     ctx.closePath();
-//     ctx.fillStyle = "red";
-//     ctx.fill(); // Fill the shape with red
-//     drawing = false;
-//   }
-// });
