@@ -109,6 +109,11 @@ function connectStartToEnd() {
   ctx.fill(); // Fill the shape with red
 }
 
+function clearRect() {
+  console.log("clicky flip flip");
+  ctx.clearRect(canvas.width / 2 - 100, canvas.height - 200, 200, 200);
+}
+
 canvas.addEventListener("mousedown", (e) => {
   if (shapeCount >= 10) return; // Prevent drawing if max shapes reached
 
