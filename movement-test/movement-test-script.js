@@ -75,10 +75,24 @@ function drawBottomLine() {
 }
 
 function drawBoxObject() {
-  setTimeout(drawLeftLine, 250); // Draw left line after 0.25 seconds
-  setTimeout(drawTopLine, 500); // Draw top line after 0.5 seconds
-  setTimeout(drawRightLine, 750); // Draw right line after 0.75 seconds
-  setTimeout(drawBottomLine, 1000); // Draw bottom line after 1 second
+  setTimeout(drawLeftLine, 250);
+  setTimeout(drawTopLine, 500);
+  setTimeout(drawRightLine, 750);
+  setTimeout(drawBottomLine, 1000);
+
+  setTimeout(() => {
+    canvas.addEventListener("click", handleClickInsideBox);
+  }, 1000);
+}
+
+function handleClickInsideBox(e) {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  if (mouseX >= startX && mouseX <= startX + width && mouseY >= startY && mouseY <= startY + height) {
+    console.log("click!");
+  }
 }
 
 drawBoxObject();
