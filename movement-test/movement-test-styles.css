@@ -49,3 +49,9 @@ canvas {
 .button:hover {
   background-color: #0056b3;
 }
+
+/* .custom-cursor {
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAAXNSR0IArs4c6QAAABlJREFUCNdj+P///38GBgYGJCX+AABKqBNRFoBy5wAAAABJRU5ErkJggg==")
+      1 1,
+    auto;
+} */
