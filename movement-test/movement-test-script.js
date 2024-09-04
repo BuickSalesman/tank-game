@@ -41,8 +41,8 @@ canvas.addEventListener("mouseleave", () => {
 
 //will have to add collision conditionals later obviously
 
-const startX = 450; // X coordinate of the top-left corner
-const startY = 900; // Y coordinate of the top-left corner
+let startX = 450; // X coordinate of the top-left corner
+let startY = 900; // Y coordinate of the top-left corner
 const width = 50; // Width of the rectangle
 const height = 50; // Height of the rectangle
 
@@ -89,9 +89,13 @@ function handleClickInsideBox(e) {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
+  const centerPointCoords = [width + rect.left / 2, height + rect.top / 2];
+  console.log(e.clientX, rect.left, mouseX);
 
   if (mouseX >= startX && mouseX <= startX + width && mouseY >= startY && mouseY <= startY + height) {
-    console.log("click!");
+    ctx.beginPath();
+    ctx.arc(centerPointCoords[0], centerPointCoords[1], 15, 0, 2 * Math.PI);
+    ctx.stroke();
   }
 }
 
