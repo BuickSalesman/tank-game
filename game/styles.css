@@ -16,14 +16,14 @@ body {
 /* Container for the game, including canvas */
 #gameContainer {
   position: relative;
-  width: 80vw; /* Fixed to 80% of the viewport width */
-  height: 80vh; /* Fixed to 80% of the viewport height */
+  width: 800px; /* Fixed width */
+  height: 600px; /* Fixed height */
   background-color: #f0f0f0;
   display: flex;
   justify-content: center;
   align-items: center;
   border: 2px solid #000;
-  margin: 20px; /* Margin for surrounding HTML elements */
+  margin: 20px;
 }
 
 /* Canvas styles */
@@ -33,7 +33,7 @@ canvas {
   display: block;
   background-color: white;
   border: 1px solid black;
-  pointer-events: none; /* Disable user interaction */
+  pointer-events: none;
 }
 
 /* Button container styles */
