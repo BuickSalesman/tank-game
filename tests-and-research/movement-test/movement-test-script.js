@@ -11,35 +11,13 @@ function resizeCanvas() {
 
 resizeCanvas();
 
-canvas.addEventListener("mouseenter", () => {
-  canvas.classList.add("custom-cursor"); // Apply the custom cursor class
-});
+// canvas.addEventListener("mouseenter", () => {
+//   canvas.classList.add("custom-cursor"); // Apply the custom cursor class
+// });
 
-canvas.addEventListener("mouseleave", () => {
-  canvas.classList.remove("custom-cursor"); // Remove the custom cursor class
-});
-
-//define max movement distance
-
-//define box -- x, y, width, height, shooting range(invisible)
-//make box -- line by line animation would be fun
-
-//listen for click on box
-//select move or shoot
-//listen for second click on box - this represents starting to push the pencil down
-
-////////start 3 second timer -- this may be shortened later
-////////show power slider for 1 second -- this will be shortend later
-////////listen for mouse move after click while holding on box, show a single dot relative to direction (opposite of actual movement direction) on tank within shooting range
-////////if mouse is released before 1 second, do something like start over or very short move or shoot
-///////calculate movement based off total time held down before releasing
-
-//draw line from shooting dot to center of tank, extend based on movement calculation
-//make box
-
-//show last three turns of movement/shooting, with a general degradation as time goes by
-
-//will have to add collision conditionals later obviously
+// canvas.addEventListener("mouseleave", () => {
+//   canvas.classList.remove("custom-cursor"); // Remove the custom cursor class
+// });
 
 let startX = 450; // X coordinate of the top-left corner
 let startY = 900; // Y coordinate of the top-left corner
