@@ -45,9 +45,12 @@ const walls = [
 ];
 World.add(world, walls);
 
-// Create and add the tank to the world
-let tank = createTank(width / 2, height - 50);
-World.add(world, tank);
+// Create and add the tank1 to the world
+let tank1 = createTank(width / 2, height - 200);
+World.add(world, tank1);
+
+let tank2 = createTank(width - 50, height - 100);
+World.add(world, tank2);
 
 // Tank movement logic using keyboard
 document.addEventListener("keydown", function (event) {
@@ -56,22 +59,22 @@ document.addEventListener("keydown", function (event) {
     case "ArrowUp": // or 'w'
     case "W":
     case "w":
-      Body.applyForce(tank, tank.position, { x: 0, y: -forceMagnitude });
+      Body.applyForce(tank1, tank1.position, { x: 0, y: -forceMagnitude });
       break;
     case "ArrowDown": // or 's'
     case "S":
     case "s":
-      Body.applyForce(tank, tank.position, { x: 0, y: forceMagnitude });
+      Body.applyForce(tank1, tank1.position, { x: 0, y: forceMagnitude });
       break;
     case "ArrowLeft": // or 'a'
     case "A":
     case "a":
-      Body.applyForce(tank, tank.position, { x: -forceMagnitude, y: 0 });
+      Body.applyForce(tank1, tank1.position, { x: -forceMagnitude, y: 0 });
       break;
     case "ArrowRight": // or 'd'
     case "D":
     case "d":
-      Body.applyForce(tank, tank.position, { x: forceMagnitude, y: 0 });
+      Body.applyForce(tank1, tank1.position, { x: forceMagnitude, y: 0 });
       break;
   }
 });
