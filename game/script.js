@@ -9,22 +9,31 @@ const world = engine.world;
 engine.world.gravity.y = 0;
 engine.world.gravity.x = 0;
 
-// Set up fixed canvas dimensions
+// Define the aspect ratio for portrait orientation (Height is taller than width)
+const aspectRatio = 1 / 1.4142;
+const baseHeight = window.innerHeight * 0.8; // Set the height to 80% of the window height
+const width = baseHeight * aspectRatio; // Calculate the width using the flipped aspect ratio
+const height = baseHeight; // Set the height
+
+// Set up the canvas dimensions dynamically
 const canvas = document.getElementById("gameCanvas");
-const width = 800; // Fixed width
-const height = 600; // Fixed height
 canvas.width = width;
 canvas.height = height;
 
+// Also set the container's width and height dynamically
+const gameContainer = document.getElementById("gameContainer");
+gameContainer.style.width = `${width}px`;
+gameContainer.style.height = `${height}px`;
+
 // Create a Matter.js renderer bound to the canvas
 const render = Render.create({
-  element: document.getElementById("gameContainer"),
+  element: gameContainer,
   canvas: canvas,
   engine: engine,
   options: {
     width: width,
     height: height,
-    wireframes: false,
+    wireframes: false, // Set to true for debugging wireframes
     background: "#ffffff",
   },
 });
@@ -36,7 +45,7 @@ Render.run(render);
 const runner = Runner.create();
 Runner.run(runner, engine);
 
-// Create static walls around the world (so objects don't fall out)
+// Create static walls around the world to keep the tank inside
 const walls = [
   Bodies.rectangle(width / 2, 0, width, 10, { isStatic: true }), // top
   Bodies.rectangle(width / 2, height, width, 10, { isStatic: true }), // bottom

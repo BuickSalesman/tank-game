@@ -16,8 +16,10 @@ body {
 /* Container for the game, including canvas */
 #gameContainer {
   position: relative;
-  width: 800px; /* Fixed width */
-  height: 600px; /* Fixed height */
+  /* Use CSS variables for width and height based on the flipped aspect ratio (1 : 1.4142) */
+  --aspect-ratio: 0.7071; /* 1 / 1.4142 */
+  height: 80vh; /* Height still set to 80% of the viewport */
+  width: calc(var(--aspect-ratio) * 80vh); /* Width is now smaller, using the flipped ratio */
   background-color: #f0f0f0;
   display: flex;
   justify-content: center;
@@ -35,7 +37,6 @@ canvas {
   border: 1px solid black;
   pointer-events: none;
 }
-
 /* Button container styles */
 .button-container {
   margin-top: 20px;
