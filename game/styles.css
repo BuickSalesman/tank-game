@@ -1,4 +1,3 @@
-/* General body and html styles */
 html,
 body {
   margin: 0;
@@ -9,18 +8,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f0f0f0;
+  background-color: white;
   flex-direction: column;
 }
 
-/* Container for the game, including canvas */
 #gameContainer {
   position: relative;
-  /* Use CSS variables for width and height based on the flipped aspect ratio (1 : 1.4142) */
-  --aspect-ratio: 0.7071; /* 1 / 1.4142 */
-  height: 80vh; /* Height still set to 80% of the viewport */
-  width: calc(var(--aspect-ratio) * 80vh); /* Width is now smaller, using the flipped ratio */
-  background-color: #f0f0f0;
+  --aspect-ratio: 0.7071; /* 1 / 1.4142 - the ratio of a standard piece of A4 lined notebook paper */
+  height: 80vh;
+  width: calc(var(--aspect-ratio) * 80vh); /* Width is now flipped to be aligned with the A4 paper ratio */
+  background-color: white;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -28,32 +25,28 @@ body {
   margin: 20px;
 }
 
-/* Canvas styles */
 canvas {
   width: 100%;
   height: 100%;
   display: block;
   background-color: white;
-  border: 1px solid black;
-  pointer-events: none;
+  border: 1px solid #000;
 }
-/* Button container styles */
+
 .button-container {
   margin-top: 20px;
   display: flex;
-  gap: 10px; /* Space between buttons */
+  gap: 10px;
 }
 
-/* Button styles */
 .button {
   padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  border: none;
+  background-color: orange;
+  color: black;
   border-radius: 5px;
   cursor: pointer;
 }
 
 .button:hover {
-  background-color: #0056b3;
+  background-color: #cf8b0e;
 }
