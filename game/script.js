@@ -48,32 +48,32 @@ const walls = [
   // Top
   Bodies.rectangle(
     width / 2,
-    -50,
+    -500,
     width,
-    100,
+    1000,
     {isStatic: true}
   ),
   // Bottom
   Bodies.rectangle(
     width / 2,
-    height + 50,
+    height + 500,
     width,
-    100,
+    1000,
     {isStatic: true}
   ),
   //Left
   Bodies.rectangle(
-    -50,
+    -500,
     height / 2,
-    100,
+    1000,
     height,
     {isStatic: true}
   ),
   //Right
   Bodies.rectangle(
-    width + 50,
+    width + 500,
     height / 2,
-    100,
+    1000,
     height,
     {isStatic: true}
   ),
@@ -92,7 +92,7 @@ let mouseConstraint = Matter.MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
     // Stiffness controls the mouse's ability to be able to move objects around. 0 for non-interactivity.
-    stiffness: 0,
+    stiffness: 0.0008,
     render: {
       visible: true,
     },
