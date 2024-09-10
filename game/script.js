@@ -92,7 +92,7 @@ let mouseConstraint = Matter.MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
     // Stiffness controls the mouse's ability to be able to move objects around. 0 for non-interactivity.
-    stiffness: 0.8,
+    stiffness: 0,
     render: {
       visible: true,
     },
@@ -111,4 +111,29 @@ Matter.Events.on(mouseConstraint, "mousedown", function (event) {
   if (Matter.Bounds.contains(tank.bounds, mousePosition)) {
     console.log("clicky");
   }
+});
+
+// Power meter
+const powerButton = document.getElementById("powerButton");
+const powerMeterFill = document.getElementById("powerMeterFill");
+
+let powerLevel = 0;
+let powerFillInterval;
+const maxPowerLevel = 100;
+
+powerButton.addEventListener("mousedown", () => {
+  powerFillInterval = setInterval(() => {
+    if (powerLevel < maxPowerLevel) {
+      powerLevel += 10;
+      powerMeterFill.style.height = `${powerLevel}%`;
+    }
+  }, 50);
+});
+
+powerButton.addEventListener("mouseup", () => {
+  clearInterval(powerFillInterval);
+});
+
+powerButton.addEventListener("mouseleave", () => {
+  clearInterval(powerFillInterval);
 });
