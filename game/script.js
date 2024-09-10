@@ -113,7 +113,8 @@ Matter.Events.on(mouseConstraint, "mousedown", function (event) {
   }
 });
 
-// Power meter
+// POWER METER
+// Select appropriate DOM elements by their ID's.
 const powerButton = document.getElementById("powerButton");
 const powerMeterFill = document.getElementById("powerMeterFill");
 
@@ -121,6 +122,7 @@ let powerLevel = 0;
 let powerFillInterval;
 const maxPowerLevel = 100;
 
+// Listen for mousedown on power button and start to fill the power meter.
 powerButton.addEventListener("mousedown", () => {
   powerFillInterval = setInterval(() => {
     if (powerLevel < maxPowerLevel) {
@@ -130,10 +132,12 @@ powerButton.addEventListener("mousedown", () => {
   }, 50);
 });
 
+// Stop filling power meter on mouse up.
 powerButton.addEventListener("mouseup", () => {
   clearInterval(powerFillInterval);
 });
 
+//Stop filling power meter on mouse leave
 powerButton.addEventListener("mouseleave", () => {
   clearInterval(powerFillInterval);
 });

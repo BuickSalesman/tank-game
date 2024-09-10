@@ -61,6 +61,7 @@ canvas {
   width: 100%;
   background-color: red;
   height: 0%;
+  /* smooth fill */
   transition: height 0.1s ease;
 }
 
