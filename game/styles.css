@@ -12,6 +12,12 @@ body {
   flex-direction: column;
 }
 
+#bodyContainer {
+  background-image: url("assets/desk.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
 #gameContainer {
   position: relative;
   --aspect-ratio: 0.7071; /* 1 / 1.4142 - the ratio of a standard piece of A4 lined notebook paper */
