@@ -81,7 +81,7 @@ const walls = [
 
 World.add(world, walls);
 
-let tank = createTank(width / 2, height - 200);
+let tank = TankModule.createTank(width / 2, height - 200);
 World.add(world, tank);
 
 // Create a mouse input object.
@@ -92,7 +92,7 @@ let mouseConstraint = Matter.MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
     // Stiffness controls the mouse's ability to be able to move objects around. 0 for non-interactivity.
-    stiffness: 0,
+    stiffness: 0.008,
     render: {
       visible: true,
     },
@@ -125,11 +125,14 @@ const maxPowerLevel = 100;
 // Listen for mousedown on power button and start to fill the power meter.
 powerButton.addEventListener("mousedown", () => {
   powerFillInterval = setInterval(() => {
-    if (powerLevel < maxPowerLevel) {
-      powerLevel += 10;
+    if (powerLevel <= maxPowerLevel) {
+      powerMeterFill.style.height = `${powerLevel}%`;
+    } else if (powerLevel > 100) {
+      powerLevel = 10;
       powerMeterFill.style.height = `${powerLevel}%`;
     }
-  }, 50);
+    powerLevel += 1;
+  }, 3);
 });
 
 // Stop filling power meter on mouse up.
