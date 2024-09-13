@@ -92,7 +92,7 @@ let mouseConstraint = Matter.MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
     // Stiffness controls the mouse's ability to be able to move objects around. 0 for non-interactivity.
-    stiffness: 0,
+    stiffness: 0.0,
     render: {
       visible: true,
     },
@@ -113,7 +113,7 @@ Matter.Events.on(mouseConstraint, "mousedown", function (event) {
   }
 });
 
-// POWER METER
+// POWER METER AND DIRECTIONAL INPUT
 // Select appropriate DOM elements by their ID's.
 const powerButton = document.getElementById("powerButton");
 const powerMeterFill = document.getElementById("powerMeterFill");
@@ -121,12 +121,15 @@ const powerMeterFill = document.getElementById("powerMeterFill");
 let powerLevel = 0;
 const maxPowerLevel = 100;
 let isMouseDown = false;
+let dragStart = null;
 
-// Track power when mouse is down and within the tank boundaries.
+// Track power when mouse is down and within the tank boundaries. Start tracking mouse dragging.
 Events.on(mouseConstraint, "mousedown", function (event) {
   let mousePosition = event.mouse.position;
   if (Matter.Bounds.contains(tank.bounds, mousePosition)) {
     isMouseDown = true;
+    // Store the starting point.
+    dragStart = { x: mousePosition.x, y: mousePosition.y };
   }
 });
 
