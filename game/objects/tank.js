@@ -5,6 +5,8 @@ const TankModule = {
       restitution: 0.9,
       // Requires two bodies to measure friction.
       friction: 1,
+      frictionAir: 0.1,
+      density: 1,
       render: {
         fillStyle: "transparent",
         strokeStyle: "black",

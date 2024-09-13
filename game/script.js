@@ -119,7 +119,6 @@ const powerButton = document.getElementById("powerButton");
 const powerMeterFill = document.getElementById("powerMeterFill");
 
 let powerLevel = 0;
-let powerFillInterval;
 const maxPowerLevel = 100;
 let isMouseDown = false;
 
@@ -134,7 +133,7 @@ Events.on(mouseConstraint, "mousedown", function (event) {
 // Apply force when mouse is up.
 Events.on(mouseConstraint, "mouseup", () => {
   if (powerLevel > 0) {
-    const forceMagnitude = powerLevel * 0.000005;
+    const forceMagnitude = powerLevel * 0.0158;
     Body.applyForce(tank, tank.position, { x: 0, y: -forceMagnitude * 10 });
   }
   resetPower();
