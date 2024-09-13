@@ -46,7 +46,7 @@
       });
 
       // Create the tank (rectangle) and ground (static)
-      const tank = Bodies.rectangle(400, 300, 50, 50, { restitution: 2 });
+      const tank = Bodies.rectangle(400, 300, 50, 50, { restitution: 1 });
       const ground = Bodies.rectangle(400, 580, 810, 60, { restitution: 1, isStatic: true });
 
       World.add(world, [tank, ground]);

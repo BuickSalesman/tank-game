@@ -92,7 +92,7 @@ let mouseConstraint = Matter.MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
     // Stiffness controls the mouse's ability to be able to move objects around. 0 for non-interactivity.
-    stiffness: 0.008,
+    stiffness: 0,
     render: {
       visible: true,
     },
@@ -121,26 +121,42 @@ const powerMeterFill = document.getElementById("powerMeterFill");
 let powerLevel = 0;
 let powerFillInterval;
 const maxPowerLevel = 100;
+let isMouseDown = false;
 
-// Listen for mousedown on power button and start to fill the power meter.
-powerButton.addEventListener("mousedown", () => {
-  powerFillInterval = setInterval(() => {
-    if (powerLevel <= maxPowerLevel) {
-      powerMeterFill.style.height = `${powerLevel}%`;
-    } else if (powerLevel > 100) {
-      powerLevel = 10;
-      powerMeterFill.style.height = `${powerLevel}%`;
-    }
-    powerLevel += 1;
-  }, 3);
+// Track power when mouse is down and within the tank boundaries.
+Events.on(mouseConstraint, "mousedown", function (event) {
+  let mousePosition = event.mouse.position;
+  if (Matter.Bounds.contains(tank.bounds, mousePosition)) {
+    isMouseDown = true;
+  }
 });
 
-// Stop filling power meter on mouse up.
-powerButton.addEventListener("mouseup", () => {
-  clearInterval(powerFillInterval);
+// Apply force when mouse is up.
+Events.on(mouseConstraint, "mouseup", () => {
+  if (powerLevel > 0) {
+    const forceMagnitude = powerLevel * 0.000005;
+    Body.applyForce(tank, tank.position, { x: 0, y: -forceMagnitude * 10 });
+  }
+  resetPower();
 });
 
-//Stop filling power meter on mouse leave
-powerButton.addEventListener("mouseleave", () => {
-  clearInterval(powerFillInterval);
+// Update the power meter during each engine tick
+Events.on(engine, "beforeUpdate", () => {
+  if (isMouseDown) {
+    increasePower();
+  }
 });
+
+function increasePower() {
+  if (powerLevel < maxPowerLevel) {
+    powerLevel += 8;
+    powerLevel = Math.min(powerLevel, 100); // Ensure power meter does not exceed 100.
+    powerMeterFill.style.height = `${powerLevel}%`;
+  }
+}
+
+function resetPower() {
+  powerLevel = 0;
+  powerMeterFill.style.height = "0%";
+  isMouseDown = false;
+}
