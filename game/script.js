@@ -94,7 +94,7 @@ let mouseConstraint = Matter.MouseConstraint.create(engine, {
     // Stiffness controls the mouse's ability to be able to move objects around. 0 for non-interactivity.
     stiffness: 0.0,
     render: {
-      visible: true,
+      visible: false,
     },
   },
 });
@@ -118,16 +118,8 @@ Events.on(mouseConstraint, "mousedown", function (event) {
   let mousePosition = event.mouse.position;
   if (Matter.Bounds.contains(tank.bounds, mousePosition)) {
     isMouseDown = true;
+    // Save the point of click
     startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
-    console.log("Mouse down at:", startingMousePosition);
-  }
-});
-
-// Track directional input.
-Events.on(mouseConstraint, "mousemove", function (event) {
-  if (isMouseDown) {
-    let mousePosition = event.mouse.position;
-    console.log("Mouse is moving. Current position:", mousePosition);
   }
 });
 
@@ -136,7 +128,6 @@ Matter.Events.on(mouseConstraint, "mouseup", function (event) {
   if (isMouseDown) {
     isMouseDown = false;
     endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y }; // Store the end position
-    console.log("Mouse up at:", endingMousePosition);
 
     // Calculate the vector from the starting to the ending position
     let vector = {
@@ -144,17 +135,19 @@ Matter.Events.on(mouseConstraint, "mouseup", function (event) {
       y: endingMousePosition.y - startingMousePosition.y,
     };
 
-    console.log("Vector from mousedown to mouseup:", vector);
-
+    // Do fancy math so that the vector does not affect to power of force applied to tank.
     const vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
     let normalizedVector = { x: vector.x / vectorLength, y: vector.y / vectorLength };
 
     // Apply force based on the vector, if powerLevel is greater than 0
     if (powerLevel > 0) {
-      const forceMagnitude = powerLevel * 0.0158;
+      //Non-linear scaling for a cleaner repesentation of power.
+      const scaledPowerLevel = Math.pow(powerLevel, 1.5);
+
+      const forceMagnitude = scaledPowerLevel * 0.0158;
       Body.applyForce(tank, tank.position, {
-        x: -normalizedVector.x * forceMagnitude * 10, // scale force in x direction
-        y: -normalizedVector.y * forceMagnitude * 10, // scale force in y direction
+        x: -normalizedVector.x * forceMagnitude, // scale force in x direction
+        y: -normalizedVector.y * forceMagnitude, // scale force in y direction
       });
     }
 
@@ -172,7 +165,7 @@ Events.on(engine, "beforeUpdate", () => {
 
 function increasePower() {
   if (powerLevel < maxPowerLevel) {
-    powerLevel += 8;
+    powerLevel += 1;
     powerLevel = Math.min(powerLevel, 100); // Ensure power meter does not exceed 100.
     powerMeterFill.style.height = `${powerLevel}%`;
   }
