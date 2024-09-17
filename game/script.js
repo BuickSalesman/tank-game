@@ -102,17 +102,6 @@ let mouseConstraint = Matter.MouseConstraint.create(engine, {
 // Add the ability for mouse input into the physics world.
 World.add(world, mouseConstraint);
 
-// Set up an event listener for mousedown.
-Matter.Events.on(mouseConstraint, "mousedown", function (event) {
-  // Define the x,y coordinates of the mouse at time of the event.
-  let mousePosition = event.mouse.position;
-
-  // Check if the mouse click was winthin the bounds of the tank body.
-  if (Matter.Bounds.contains(tank.bounds, mousePosition)) {
-    console.log("clicky");
-  }
-});
-
 // POWER METER AND DIRECTIONAL INPUT
 // Select appropriate DOM elements by their ID's.
 const powerButton = document.getElementById("powerButton");
@@ -121,25 +110,57 @@ const powerMeterFill = document.getElementById("powerMeterFill");
 let powerLevel = 0;
 const maxPowerLevel = 100;
 let isMouseDown = false;
-let dragStart = null;
+let startingMousePosition = null;
+let endingMousePosition = null;
 
 // Track power when mouse is down and within the tank boundaries. Start tracking mouse dragging.
 Events.on(mouseConstraint, "mousedown", function (event) {
   let mousePosition = event.mouse.position;
   if (Matter.Bounds.contains(tank.bounds, mousePosition)) {
     isMouseDown = true;
-    // Store the starting point.
-    dragStart = { x: mousePosition.x, y: mousePosition.y };
+    startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
+    console.log("Mouse down at:", startingMousePosition);
+  }
+});
+
+// Track directional input.
+Events.on(mouseConstraint, "mousemove", function (event) {
+  if (isMouseDown) {
+    let mousePosition = event.mouse.position;
+    console.log("Mouse is moving. Current position:", mousePosition);
   }
 });
 
 // Apply force when mouse is up.
-Events.on(mouseConstraint, "mouseup", () => {
-  if (powerLevel > 0) {
-    const forceMagnitude = powerLevel * 0.0158;
-    Body.applyForce(tank, tank.position, { x: 0, y: -forceMagnitude * 10 });
+Matter.Events.on(mouseConstraint, "mouseup", function (event) {
+  if (isMouseDown) {
+    isMouseDown = false;
+    endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y }; // Store the end position
+    console.log("Mouse up at:", endingMousePosition);
+
+    // Calculate the vector from the starting to the ending position
+    let vector = {
+      x: endingMousePosition.x - startingMousePosition.x,
+      y: endingMousePosition.y - startingMousePosition.y,
+    };
+
+    console.log("Vector from mousedown to mouseup:", vector);
+
+    const vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+    let normalizedVector = { x: vector.x / vectorLength, y: vector.y / vectorLength };
+
+    // Apply force based on the vector, if powerLevel is greater than 0
+    if (powerLevel > 0) {
+      const forceMagnitude = powerLevel * 0.0158;
+      Body.applyForce(tank, tank.position, {
+        x: -normalizedVector.x * forceMagnitude * 10, // scale force in x direction
+        y: -normalizedVector.y * forceMagnitude * 10, // scale force in y direction
+      });
+    }
+
+    // Ensure that power meter and other values are reset after mouseup
+    resetPower();
   }
-  resetPower();
 });
 
 // Update the power meter during each engine tick
