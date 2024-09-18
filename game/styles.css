@@ -27,8 +27,8 @@ body {
 #gameContainer {
   position: relative;
   --aspect-ratio: 0.7071; /* 1 / 1.4142 - the ratio of a standard piece of A4 lined notebook paper */
-  height: 80vh;
-  width: calc(var(--aspect-ratio) * 80vh); /* Width is now flipped to be aligned with the A4 paper ratio */
+  height: 95vh;
+  width: calc(var(--aspect-ratio) * 95vh); /* Width is now flipped to be aligned with the A4 paper ratio */
   background-color: white;
   display: flex;
   justify-content: center;
@@ -67,6 +67,7 @@ canvas {
 .button-container {
   margin-top: 20px;
   display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 

@@ -9,7 +9,7 @@ engine.world.gravity.y = 0;
 engine.world.gravity.x = 0;
 
 const aspectRatio = 1 / 1.4142;
-const baseHeight = window.innerHeight * 0.8;
+const baseHeight = window.innerHeight * 0.95;
 const width = baseHeight * aspectRatio;
 const height = baseHeight;
 
