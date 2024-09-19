@@ -81,7 +81,9 @@ const walls = [
 
 World.add(world, walls);
 
-let tank = TankModule.createTank(width / 2, height - 200);
+let tankWidth = width * 0.025;
+let tankHeight = height * 0.025;
+let tank = TankModule.createTank(width / 2, height - 200, tankWidth, tankHeight);
 World.add(world, tank);
 
 // Create a mouse input object.

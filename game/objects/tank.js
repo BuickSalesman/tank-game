@@ -1,6 +1,6 @@
 const TankModule = {
-  createTank: function (x, y) {
-    return Matter.Bodies.rectangle(x, y, 20, 20, {
+  createTank: function (x, y, tankWidth, tankHeight) {
+    return Matter.Bodies.rectangle(x, y, tankWidth, tankHeight, {
       label: "Tank",
       restitution: 0.1,
       // Requires two bodies to measure friction.
