@@ -184,14 +184,28 @@ let isDrawing = false;
 let vertices = [];
 let shapes = [];
 
+// Adjust mouse coordinates to canvas coordinates
+function getMousePos(canvas, evt) {
+  const rect = canvas.getBoundingClientRect(); // Get the bounding box of the canvas
+  const scaleX = canvas.width / rect.width; // Horizontal scale factor
+  const scaleY = canvas.height / rect.height; // Vertical scale factor
+
+  return {
+    x: (evt.clientX - rect.left) * scaleX, // Adjust mouse position based on canvas scale
+    y: (evt.clientY - rect.top) * scaleY,
+  };
+}
+
 canvas.addEventListener("mousedown", (e) => {
   isDrawing = true;
-  vertices = [{ x: e.clientX, y: e.clientY }];
+  let pos = getMousePos(canvas, e);
+  vertices = [{ x: pos.x, y: pos.y }]; // Start a new set of vertices
 });
 
 canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
-    vertices.push({ x: e.clientX, y: e.clientY });
+    let pos = getMousePos(canvas, e);
+    vertices.push({ x: pos.x, y: pos.y });
   }
 });
 
