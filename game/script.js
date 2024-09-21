@@ -81,8 +81,8 @@ const walls = [
 
 World.add(world, walls);
 
-let tankSize = width * 0.025;
-let tank = TankModule.createTank(width / 2, height - 200, tankSize, tankSize);
+let tankSize = width * 0.025; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
+let tank = TankModule.createTank(width / 2, height - 200, tankSize, tankSize); //conflicting argument names, still works, but might cause problems later.
 World.add(world, tank);
 
 // Create a mouse input object.
@@ -176,4 +176,46 @@ function resetPower() {
   powerLevel = 0;
   powerMeterFill.style.height = "0%";
   isMouseDown = false;
+}
+
+//Shape drawing!
+const ctx = canvas.getContext("2d");
+let isDrawing = false;
+let vertices = [];
+let shapes = [];
+
+canvas.addEventListener("mousedown", (e) => {
+  isDrawing = true;
+  vertices = [{ x: e.clientX, y: e.clientY }];
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (isDrawing) {
+    vertices.push({ x: e.clientX, y: e.clientY });
+  }
+});
+
+canvas.addEventListener("mouseup", () => {
+  isDrawing = false;
+  closeShape(vertices);
+  createSolidBody(vertices);
+});
+
+function closeShape(vertices) {
+  ctx.beginPath();
+  ctx.moveTo(vertices[0].x, vertices[0].y);
+  vertices.forEach((v) => ctx.lineTo(v.x, v.y));
+  ctx.closePath();
+  ctx.fillStyle = "rgba(0, 150, 0, 0.5)"; // Example fill color
+  ctx.fill();
+}
+
+function createSolidBody(vertices) {
+  const body = Matter.Bodies.fromVertices(
+    vertices[0].x,
+    vertices[0].y,
+    [vertices],
+    { isStatic: true, render: { fillStyle: "#00FF00" } } // Example style
+  );
+  Matter.World.add(world, body);
 }
