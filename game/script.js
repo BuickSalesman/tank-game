@@ -197,9 +197,13 @@ function getMousePos(canvas, evt) {
 }
 
 canvas.addEventListener("mousedown", (e) => {
-  isDrawing = true;
   let pos = getMousePos(canvas, e);
-  vertices = [{ x: pos.x, y: pos.y }]; // Start a new set of vertices
+  if (Matter.Bounds.contains(tank.bounds, pos)) {
+    return;
+  } else {
+    isDrawing = true;
+    vertices = [{ x: pos.x, y: pos.y }];
+  } // Start a new set of vertices
 });
 
 canvas.addEventListener("mousemove", (e) => {
