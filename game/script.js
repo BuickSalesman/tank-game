@@ -233,8 +233,6 @@ function closeShape(vertices) {
   ctx.moveTo(vertices[0].x, vertices[0].y);
   vertices.forEach((v) => ctx.lineTo(v.x, v.y));
   ctx.closePath();
-  ctx.fillStyle = "transparent"; // Example fill color
-  ctx.fill();
 }
 
 function createSolidBody(vertices) {
@@ -244,3 +242,5 @@ function createSolidBody(vertices) {
   });
   Matter.World.add(world, body);
 }
+
+//VERY IMPORTANT COMMIT BECAUSE I'M ABOUT TO FUCK EVERYTHING UP
