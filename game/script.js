@@ -35,7 +35,7 @@ const render = Render.create({
   },
 });
 
-// Run renderer
+// Run renderer.
 Render.run(render);
 
 // Create a runner, this allows the engine to be updated for dynamic use within the browser.
@@ -61,7 +61,7 @@ const walls = [
     1000,
     {isStatic: true}
   ),
-  //Left
+  // Left
   Bodies.rectangle(
     -500,
     height / 2,
@@ -69,7 +69,7 @@ const walls = [
     height + 1000,
     {isStatic: true}
   ),
-  //Right
+  // Right
   Bodies.rectangle(
     width + 500,
     height / 2,
@@ -82,7 +82,7 @@ const walls = [
 World.add(world, walls);
 
 let tankSize = width * 0.025; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
-let tank = TankModule.createTank(width / 2, height - 200, tankSize, tankSize); //conflicting argument names, still works, but might cause problems later.
+let tank = TankModule.createTank(width / 2, height - 200, tankSize, tankSize); //Conflicting argument names, still works, but might cause problems later.
 World.add(world, tank);
 
 // Create a mouse input object.
@@ -119,7 +119,7 @@ Events.on(mouseConstraint, "mousedown", function (event) {
   let mousePosition = event.mouse.position;
   if (Matter.Bounds.contains(tank.bounds, mousePosition)) {
     isMouseDown = true;
-    // Save the point of click
+    // Save the point of click.
     startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
   }
 });
@@ -128,9 +128,9 @@ Events.on(mouseConstraint, "mousedown", function (event) {
 Matter.Events.on(mouseConstraint, "mouseup", function (event) {
   if (isMouseDown) {
     isMouseDown = false;
-    endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y }; // Store the end position
+    endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y }; // Store the end position.
 
-    // Calculate the vector from the starting to the ending position
+    // Calculate the vector from the starting to the ending position.
     let vector = {
       x: endingMousePosition.x - startingMousePosition.x,
       y: endingMousePosition.y - startingMousePosition.y,
@@ -140,30 +140,31 @@ Matter.Events.on(mouseConstraint, "mouseup", function (event) {
     const vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
     let normalizedVector = { x: vector.x / vectorLength, y: vector.y / vectorLength };
 
-    // Apply force based on the vector, if powerLevel is greater than 0
+    // Apply force based on the vector, if powerLevel is greater than 0.
     if (powerLevel > 0) {
       //Non-linear scaling for a cleaner repesentation of power.
       const scaledPowerLevel = Math.pow(powerLevel, 1.5);
 
       const forceMagnitude = scaledPowerLevel * 0.0158;
       Body.applyForce(tank, tank.position, {
-        x: -normalizedVector.x * forceMagnitude, // scale force in x direction
-        y: -normalizedVector.y * forceMagnitude, // scale force in y direction
+        x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
+        y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
       });
     }
 
-    // Ensure that power meter and other values are reset after mouseup
+    // Ensure that power meter and other values are reset after mouseup.
     resetPower();
   }
 });
 
-// Update the power meter during each engine tick
+// Update the power meter during each engine tick.
 Events.on(engine, "beforeUpdate", () => {
   if (isMouseDown) {
     increasePower();
   }
 });
 
+// To increase power meter when called.
 function increasePower() {
   if (powerLevel < maxPowerLevel) {
     powerLevel += 1;
@@ -172,6 +173,7 @@ function increasePower() {
   }
 }
 
+// To reset power meter when called.
 function resetPower() {
   powerLevel = 0;
   powerMeterFill.style.height = "0%";
@@ -184,28 +186,34 @@ let isDrawing = false;
 let vertices = [];
 let shapes = [];
 
-// Adjust mouse coordinates to canvas coordinates
+// Adjust mouse coordinates to canvas coordinates.
 function getMousePos(canvas, evt) {
-  const rect = canvas.getBoundingClientRect(); // Get the bounding box of the canvas
-  const scaleX = canvas.width / rect.width; // Horizontal scale factor
-  const scaleY = canvas.height / rect.height; // Vertical scale factor
+  const rect = canvas.getBoundingClientRect(); // Get the bounding box of the canvas.
+  const scaleX = canvas.width / rect.width; // Horizontal scale factor.
+  const scaleY = canvas.height / rect.height; // Vertical scale factor.
 
   return {
-    x: (evt.clientX - rect.left) * scaleX, // Adjust mouse position based on canvas scale
+    // Adjust mouse position based on the scaled canvas.
+    x: (evt.clientX - rect.left) * scaleX,
     y: (evt.clientY - rect.top) * scaleY,
   };
 }
 
+//
 canvas.addEventListener("mousedown", (e) => {
   let pos = getMousePos(canvas, e);
+
+  // Prevent drawing if mouse position is inside tank boundaries. May hook to button for ease of access during development.
   if (Matter.Bounds.contains(tank.bounds, pos)) {
     return;
   } else {
+    // Start a new set of vertices.
     isDrawing = true;
     vertices = [{ x: pos.x, y: pos.y }];
-  } // Start a new set of vertices
+  }
 });
 
+// Push each point of the mousemove into verticies array as mouse moves.
 canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
     let pos = getMousePos(canvas, e);
@@ -213,10 +221,11 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
+// End vertex tracking on mouse up. Create shape on game board.
 canvas.addEventListener("mouseup", () => {
   isDrawing = false;
-  closeShape(vertices);
-  createSolidBody(vertices);
+  closeShape(vertices); // Snap shape closed.
+  createSolidBody(vertices); // Render shape on game board.
 });
 
 function closeShape(vertices) {
@@ -224,16 +233,14 @@ function closeShape(vertices) {
   ctx.moveTo(vertices[0].x, vertices[0].y);
   vertices.forEach((v) => ctx.lineTo(v.x, v.y));
   ctx.closePath();
-  ctx.fillStyle = "rgba(0, 150, 0, 0.5)"; // Example fill color
+  ctx.fillStyle = "transparent"; // Example fill color
   ctx.fill();
 }
 
 function createSolidBody(vertices) {
-  const body = Matter.Bodies.fromVertices(
-    vertices[0].x,
-    vertices[0].y,
-    [vertices],
-    { isStatic: true, render: { fillStyle: "#00FF00" } } // Example style
-  );
+  const body = Matter.Bodies.fromVertices(vertices[0].x, vertices[0].y, [vertices], {
+    isStatic: true,
+    render: { fillStyle: "transparent", strokeStyle: "black", lineWidth: 2 },
+  });
   Matter.World.add(world, body);
 }
