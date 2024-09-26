@@ -82,7 +82,7 @@ const walls = [
 World.add(world, walls);
 
 let tankSize = width * 0.025; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
-let tank = TankModule.createTank(width / 2, height - 200, tankSize, tankSize); //Conflicting argument names, still works, but might cause problems later.
+let tank = TankModule.createTank(width / 2, height - 200, tankSize);
 World.add(world, tank);
 
 // Create a mouse input object.
@@ -242,5 +242,3 @@ function createSolidBody(vertices) {
   });
   Matter.World.add(world, body);
 }
-
-//VERY IMPORTANT COMMIT BECAUSE I'M ABOUT TO FUCK EVERYTHING UP
