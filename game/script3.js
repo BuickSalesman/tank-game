@@ -191,11 +191,8 @@ World.add(world, walls);
 //Add tank(s) to the game world.
 World.add(world, tank1);
 
+//Add reactor(s) to the game world.
 World.add(world, reactor);
-
-//#region REACTOR BODIES
-//reactor stuff
-//#endregion REACTOR BODIES
 
 //#endregion BODY CREATIONS
 
@@ -348,7 +345,23 @@ function releaseAndApplyForce(event) {
           y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
         });
       } else if (actionMode === "shoot") {
-        //do stuff
+        const shellSize = 5; // Adjust as needed
+
+        // Position the shell at the front of the tank.
+        const shellOffset = tankSize / 2 + shellSize / 2;
+        const shellX = tank1.position.x - normalizedVector.x * shellOffset;
+        const shellY = tank1.position.y - normalizedVector.y * shellOffset;
+
+        const initialVelocity = {
+          x: -normalizedVector.x * forceMagnitude * 5, //delete the quintuple multipler later this is just for fun
+          y: -normalizedVector.y * forceMagnitude * 5, //delete the quintuple multipler later this is just for fun
+        };
+
+        // Create the shell with initial velocity.
+        const shell = ShellModule.createShell(shellX, shellY, shellSize, initialVelocity);
+
+        // Add shell to the world.
+        World.add(world, shell);
       }
     }
 
