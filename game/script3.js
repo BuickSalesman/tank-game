@@ -118,7 +118,12 @@ let tank2 = TankModule.createTank(width * 0.6, height * 0.9, tankSize, PLAYER_ON
 let tank3 = TankModule.createTank(width * 0.4, height * 0.1, tankSize, PLAYER_TWO);
 let tank4 = TankModule.createTank(width * 0.6, height * 0.1, tankSize, PLAYER_TWO);
 
+//Store all tanks in an array for easy access.
+let tanks = [tank1, tank2, tank3, tank4];
+let selectedTank = null;
+
 //#endregion TANK VARIABLES
+
 //#region REACTOR VARIABLES
 let reactorSize = tankSize * 1.25;
 
@@ -129,6 +134,9 @@ const reactor2 = ReactorModule.createReactor(width * 0.6, height * 0.95, reactor
 //Player 2's reactors.
 const reactor3 = ReactorModule.createReactor(width * 0.4, height * 0.05, reactorSize, PLAYER_TWO);
 const reactor4 = ReactorModule.createReactor(width * 0.6, height * 0.05, reactorSize, PLAYER_TWO);
+
+//Store all reactors in an array for easy access.
+let reactors = [reactor1, reactor2, reactor3, reactor4];
 
 //#endregion REACTOR VARIABLES
 
@@ -215,10 +223,10 @@ document.getElementById("shootButton").addEventListener("click", function () {
 World.add(world, walls);
 
 //Add tank(s) to the game world.
-World.add(world, [tank1, tank2, tank3, tank4]);
+World.add(world, tanks);
 
 //Add reactor(s) to the game world.
-World.add(world, [reactor1, reactor2, reactor3, reactor4]);
+World.add(world, reactors);
 
 //#endregion BODY CREATIONS
 
@@ -313,7 +321,7 @@ function increasePower() {
     return;
   } else if (powerLevel < maxPowerLevel) {
     powerLevel += 1;
-    powerLevel = Math.min(powerLevel, 100); // Ensure power meter does not exceed 100.
+    powerLevel = Math.min(powerLevel, 100); //Ensure power meter does not exceed 100.
     powerMeterFill.style.height = `${powerLevel}%`;
   }
 }
@@ -328,26 +336,30 @@ function resetPower() {
 //To save the x,y coords of mouse click within a tank.
 function saveClickPoint(event) {
   let mousePosition = event.mouse.position;
-  if (Bounds.contains(tank1.bounds, mousePosition)) {
-    isMouseDown = true;
-    // Save the point of click.
-    startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
-  }
+  tanks.forEach((tank) => {
+    if (Bounds.contains(tank.bounds, mousePosition)) {
+      isMouseDown = true;
+      //Save the point of click.
+      startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
+      //Store the selected tank.
+      selectedTank = tank;
+    }
+  });
 }
 
 //To apply normalized force and direction to the tank.
 function releaseAndApplyForce(event) {
   if (isMouseDown) {
     isMouseDown = false;
-    endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y }; // Store the end position.
+    endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y }; //Store the end position.
 
-    // Calculate the vector from the starting to the ending position.
+    //Calculate the vector from the starting to the ending position.
     let vector = {
       x: endingMousePosition.x - startingMousePosition.x,
       y: endingMousePosition.y - startingMousePosition.y,
     };
 
-    // Do fancy math so that the vector does not affect to power of force applied to tank.
+    //Do fancy math so that the vector does not affect to power of force applied to tank.
     const vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
 
     //Avoid division by 0.
@@ -359,39 +371,39 @@ function releaseAndApplyForce(event) {
 
     let normalizedVector = { x: vector.x / vectorLength, y: vector.y / vectorLength };
 
-    // Apply force based on the vector, if powerLevel is greater than 0.
+    //Apply force based on the vector, if powerLevel is greater than 0.
     if (powerLevel > 0) {
       //Non-linear scaling for a cleaner repesentation of power.
       const scaledPowerLevel = Math.pow(powerLevel, 1.5);
       const forceMagnitude = scaledPowerLevel * 0.0158;
 
       if (actionMode === "move") {
-        Body.applyForce(tank1, tank1.position, {
+        Body.applyForce(selectedTank, selectedTank.position, {
           x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
           y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
         });
       } else if (actionMode === "shoot") {
         const shellSize = 5; // Adjust as needed
 
-        // Position the shell at the front of the tank.
+        //Position the shell at the front of the tank.
         const shellOffset = tankSize / 2 + shellSize / 2;
-        const shellX = tank1.position.x - normalizedVector.x * shellOffset;
-        const shellY = tank1.position.y - normalizedVector.y * shellOffset;
+        const shellX = selectedTank.position.x - normalizedVector.x * shellOffset;
+        const shellY = selectedTank.position.y - normalizedVector.y * shellOffset;
 
         const initialVelocity = {
           x: -normalizedVector.x * forceMagnitude * 5, //delete the quintuple multipler later this is just for fun
           y: -normalizedVector.y * forceMagnitude * 5, //delete the quintuple multipler later this is just for fun
         };
 
-        // Create the shell with initial velocity.
+        //Create the shell with initial velocity.
         const shell = ShellModule.createShell(shellX, shellY, shellSize, initialVelocity);
 
-        // Add shell to the world.
+        //Add shell to the world.
         World.add(world, shell);
       }
     }
 
-    // Ensure that power meter and other values are reset after mouseup.
+    //Ensure that power meter and other values are reset after mouseup.
     resetPower();
   }
 }
