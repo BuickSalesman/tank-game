@@ -14,6 +14,10 @@ let currentGameState = GameState.GAME_RUNNING;
 
 let actionMode = null;
 
+//Declare player ID
+const PLAYER_ONE = 1;
+const PLAYER_TWO = 2;
+
 //Declare engine and world.
 const engine = Engine.create();
 const world = engine.world;
@@ -103,16 +107,23 @@ const walls = [
 ];
 
 //#region TANK VARIABLES
+
 let tankSize = width * 0.025; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
 
 //Change the points where the tanks are edded into the game world to percentages of canvas size, change to add 2 above and 2 below the dividing line.
-let tank1 = TankModule.createTank(width / 2, height - 200, tankSize);
+let tank1 = TankModule.createTank(width / 2, height - 200, tankSize, PLAYER_ONE);
+let tank2 = TankModule.createTank(width / 2, height - 200, tankSize, PLAYER_ONE);
+let tank3 = TankModule.createTank(width / 2, height - 200, tankSize, PLAYER_TWO);
+let tank4 = TankModule.createTank(width / 2, height - 200, tankSize, PLAYER_TWO);
 
 //#endregion TANK VARIABLES
 //#region REACTOR VARIABLES
 let reactorSize = tankSize * 1.25;
 
-const reactor = ReactorModule.createReactor(400, 200, reactorSize);
+const reactor1 = ReactorModule.createReactor(400, 200, reactorSize, PLAYER_ONE);
+const reactor2 = ReactorModule.createReactor(400, 200, reactorSize, PLAYER_ONE);
+const reactor3 = ReactorModule.createReactor(400, 200, reactorSize, PLAYER_TWO);
+const reactor4 = ReactorModule.createReactor(400, 200, reactorSize, PLAYER_TWO);
 //#endregion REACTOR VARIABLES
 //#region SHELL VARIABLES
 //#endregion SHELL VARIABLES
@@ -157,6 +168,8 @@ Runner.run(runner, engine);
 World.add(world, mouseConstraint);
 //#endregion MATTER SETUP
 
+//#region EVENT HANDLERS
+
 //#region AFTERRENDER HANDLER
 Events.on(render, "afterRender", function () {
   drawDividingLine();
@@ -183,6 +196,11 @@ document.getElementById("shootButton").addEventListener("click", function () {
 });
 //#endregion BUTTON EVENT HANDLERS
 
+//#region COLLISION HANDLERS
+//#endregion COLLISION HANDLERS
+
+//#endregion EVENT HANDLERS
+
 //#region BODY CREATION
 
 //Add boundary walls to the game world.
@@ -192,7 +210,7 @@ World.add(world, walls);
 World.add(world, tank1);
 
 //Add reactor(s) to the game world.
-World.add(world, reactor);
+World.add(world, reactor1);
 
 //#endregion BODY CREATIONS
 

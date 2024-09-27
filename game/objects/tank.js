@@ -1,11 +1,12 @@
 const TankModule = {
-  createTank: function (x, y, tankSize) {
+  createTank: function (x, y, tankSize, playerId) {
     const area = tankSize * tankSize; // Assuming a square tank
     const desiredMass = 100; // Set your desired mass
     const density = desiredMass / area;
 
     const tank = Matter.Bodies.rectangle(x, y, tankSize, tankSize, {
       label: "Tank",
+      playerId: playerId,
       restitution: 0.1,
       // Require two bodies to measure friction.
       friction: 1,
