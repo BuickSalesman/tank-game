@@ -551,3 +551,5 @@ function releaseAndApplyForce(event) {
 //Bug where the blue drawing line does not disappear after the last shape is drawn
 //Bug where if you draw convex or sharp shapes, the rendered bodies do are blobular instead
 //Bug where the rendered shape is offset just a bit from where it is drawn
+//Bug where shapes should not be allowed to overlap
+//Bug where tanks are propelled further relative to smallness of window/canvas
