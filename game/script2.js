@@ -1,6 +1,5 @@
-//#region matter-definitions
+//#region MATTER SETUP
 const { Bounds, Engine, MouseConstraint, Mouse, Render, Runner, Bodies, World, Events } = Matter;
-const MatterBody = Matter.Body;
 // Create engine and world.
 const engine = Engine.create();
 const world = engine.world;
@@ -10,9 +9,7 @@ const GameState = Object.freeze({
   GAME_RUNNING: "GAME_RUNNING",
   POST_GAME: "POST_GAME",
 });
-let currentGameState = GameState.PRE_GAME;
-
-console.log("pregame", GameState.PRE_GAME);
+let currentGameState = GameState.GAME_RUNNING;
 
 // Disable gravity.
 engine.world.gravity.y = 0;
@@ -22,7 +19,9 @@ const aspectRatio = 1 / 1.4142;
 const baseHeight = window.innerHeight * 0.95;
 const width = baseHeight * aspectRatio;
 const height = baseHeight;
+////////////////////////////////////////////////////
 let startX, startY, lastX, lastY; //for drawing stuff
+////////////////////////////////////////////////////
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -54,7 +53,24 @@ Render.run(render);
 const runner = Runner.create();
 Runner.run(runner, engine);
 
-//#endregion matter-definitions
+//#endregion MATTER SETUP
+
+//#region GAME WORLD SETUP
+
+//Create dividing line.
+
+Matter.Events.on(render, "afterRender", function () {
+  // Use your existing ctx
+  const dividingLine = canvas.height / 2;
+
+  // Draw the dividing line
+  ctx.beginPath();
+  ctx.moveTo(0, dividingLine);
+  ctx.lineTo(canvas.width, dividingLine);
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+});
 
 //Create walls around the canvas to keep game bodies inside the canvas.
 // prettier-ignore
@@ -96,8 +112,16 @@ const walls = [
 World.add(world, walls);
 
 let tankSize = width * 0.025; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
-let tank = TankModule.createTank(width / 2, height - 200, tankSize);
-World.add(world, tank);
+let tank1 = TankModule.createTank(width / 2, height - 200, tankSize);
+let tank2 = TankModule.createTank(width / 2.5, height - 200, tankSize);
+let tank3 = TankModule.createTank(width / 2, height - 100, tankSize);
+let tank4 = TankModule.createTank(width / 2.5, height - 100, tankSize);
+World.add(world, tank1);
+World.add(world, tank2);
+World.add(world, tank3);
+World.add(world, tank4);
+
+let tanks = [tank1, tank2, tank3, tank4];
 
 // Create a mouse input object.
 let mouse = Mouse.create(render.canvas);
@@ -116,6 +140,7 @@ let mouseConstraint = MouseConstraint.create(engine, {
 
 // Add the ability for mouse input into the physics world.
 World.add(world, mouseConstraint);
+//#endregion WORLD SETUP
 
 //#region MOUSE EVENTS
 
@@ -126,17 +151,18 @@ Events.on(mouseConstraint, "mousedown", function (event) {
   let mousePosition = event.mouse.position;
   if (currentGameState === GameState.PRE_GAME) {
     // draw stuff
-    isMouseDown = true;
     isDrawing = true;
-    ctx.beginPath();
-    [startX, startY] = [event.offsetX, event.offsetY];
-    [lastX, lastY] = [event.offsetX, event.offsetY];
-    vertices = [{ x: event.offsetX, y: event.offsetY }];
+    Matter.Events.on(render, "afterRender", function () {
+      ctx.beginPath();
+      [startX, startY] = [event.offsetX, event.offsetY];
+      [lastX, lastY] = [event.offsetX, event.offsetY];
+      vertices = [{ x: event.offsetX, y: event.offsetY }];
+    });
   }
 
   if (currentGameState === GameState.GAME_RUNNING) {
     // Move Stuff
-    if (Bounds.contains(tank.bounds, mousePosition)) {
+    if (Bounds.contains(tanks.bounds, mousePosition)) {
       isMouseDown = true;
       // Save the point of click.
       startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
@@ -192,7 +218,7 @@ Events.on(mouseConstraint, "mouseup", function (event) {
         const scaledPowerLevel = Math.pow(powerLevel, 1.5);
 
         const forceMagnitude = scaledPowerLevel * 0.0158;
-        MatterBody.applyForce(tank, tank.position, {
+        Matter.Body.applyForce(tank, tank.position, {
           x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
           y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
         });
@@ -231,12 +257,14 @@ function getMousePos(canvas, evt) {
 }
 
 function draw(event) {
-  console.log("event", event);
-  ctx.lineTo(event.offsetX, event.offsetY);
-  ctx.strokeStyle = "black"; // Draw lines in black
-  ctx.stroke();
+  Matter.Events.on(render, "afterRender", function () {
+    console.log("event", event);
+    ctx.lineTo(event.offsetX, event.offsetY);
+    ctx.strokeStyle = "black"; // Draw lines in black
+    ctx.stroke();
 
-  [lastX, lastY] = [event.offsetX, event.offsetY];
+    [lastX, lastY] = [event.offsetX, event.offsetY];
+  });
 }
 //#endregion SHAPE DRAWING!
 
@@ -261,6 +289,7 @@ if (GameState.GAME_RUNNING) {
 }
 
 // To increase power meter when called.
+
 function increasePower() {
   if (powerLevel < maxPowerLevel) {
     powerLevel += 1;
