@@ -1,5 +1,6 @@
 //#region MATTER SETUP
-const { Bounds, Engine, MouseConstraint, Mouse, Render, Runner, Body, Bodies, World, Events } = Matter;
+const { Bounds, Engine, MouseConstraint, Mouse, Render, Runner, Body, Bodies, World, Events, Detector, Vertices } =
+  Matter;
 
 //#region VARIABLES
 
@@ -10,7 +11,7 @@ const GameState = Object.freeze({
   GAME_RUNNING: "GAME_RUNNING",
   POST_GAME: "POST_GAME",
 });
-let currentGameState = GameState.GAME_RUNNING;
+let currentGameState = GameState.PRE_GAME;
 
 let actionMode = null;
 
@@ -148,6 +149,16 @@ let shell = null;
 
 //#region DRAWING VARIABLES
 const dividingLine = canvas.height / 2;
+
+//Counter for number of shapes drawn.
+let shapeCount = 0;
+
+//Initial state allows drawing below dividingLine.
+let isDrawingBelow = true;
+
+let isDrawing = false;
+
+let drawingPath = [];
 //#endregion DRAWING VARIABLES
 
 //#region MOVE AND SHOOT VARIABLES
@@ -190,6 +201,17 @@ World.add(world, mouseConstraint);
 //#region AFTERRENDER HANDLER
 Events.on(render, "afterRender", function () {
   drawDividingLine();
+
+  if (drawingPath.length > 0) {
+    ctx.beginPath();
+    ctx.moveTo(drawingPath[0].x, drawingPath[0].y);
+    for (let i = 1; i < drawingPath.length; i++) {
+      ctx.lineTo(drawingPath[i].x, drawingPath[i].y);
+    }
+    ctx.strokeStyle = "blue"; // Set the stroke color for the drawing
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
 });
 //#endregion AFTERRENDER HANDLER
 
@@ -211,7 +233,6 @@ Events.on(engine, "afterUpdate", function () {
       // Adjust this value as necessary
       World.remove(world, shell);
       shell = null;
-      console.log("Shell removed from world.");
     }
   }
 });
@@ -255,6 +276,14 @@ Events.on(mouseConstraint, "mousedown", function (event) {
   }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
+
+    //Prevent drawing if max shapes is reached.
+    if (shapeCount >= 10) return;
+
+    isDrawing = true;
+    drawingPath = [];
+    const { mouse } = event;
+    drawingPath.push({ x: mouse.position.x, y: mouse.position.y });
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -271,6 +300,9 @@ Events.on(mouseConstraint, "mousemove", function (event) {
   }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
+    if (isDrawing) {
+      drawingPath.push({ x: mouse.position.x, y: mouse.position.y });
+    }
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -286,6 +318,7 @@ Events.on(mouseConstraint, "mouseup", function (event) {
   }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
+    isDrawing = false;
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -302,6 +335,7 @@ Events.on(mouseConstraint, "mouseleave", function (event) {
   }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
+    isDrawing = false;
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -325,6 +359,10 @@ function drawDividingLine() {
   ctx.strokeStyle = "black";
   ctx.lineWidth = 2;
   ctx.stroke();
+}
+
+function draw(event) {
+  if (!isDrawing) return;
 }
 
 //#endregion DRAWING FUNCTIONS

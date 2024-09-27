@@ -23,64 +23,6 @@ function resizeCanvas() {
   ctx.strokeStyle = "black";
   ctx.lineWidth = 2;
   ctx.stroke();
-
-  drawReactors();
-  drawTanks();
-}
-
-// Function to draw the reactors
-function drawReactors() {
-  const reactorRadius = 15;
-  const reactorDistance = 50;
-
-  const topY = canvas.height * 0.025;
-  const bottomY = canvas.height * 0.975;
-  const centerX = canvas.width / 2;
-
-  // Draw top reactors
-  ctx.beginPath();
-  ctx.arc(centerX - reactorDistance, topY, reactorRadius, 0, 2 * Math.PI);
-  ctx.arc(centerX + reactorDistance, topY, reactorRadius, 0, 2 * Math.PI);
-  ctx.fillStyle = "green";
-  ctx.fill();
-
-  // Draw bottom reactors
-  ctx.beginPath();
-  ctx.arc(centerX - reactorDistance, bottomY, reactorRadius, 0, 2 * Math.PI);
-  ctx.arc(centerX + reactorDistance, bottomY, reactorRadius, 0, 2 * Math.PI);
-  ctx.fillStyle = "green";
-  ctx.fill();
-}
-
-function drawTanks() {
-  const tankSize = 25;
-  const reactorRadius = 20;
-  const reactorDistance = 50;
-  const tankOffset = 10;
-
-  const topY = canvas.height * 0.025; // from the top
-  const bottomY = canvas.height * 0.975; // from the bottom
-  const centerX = canvas.width / 2;
-
-  // Draw tanks below top reactors
-  ctx.fillStyle = "blue";
-  ctx.fillRect(centerX - reactorDistance - tankSize / 2, topY + reactorRadius + tankOffset, tankSize, tankSize);
-  ctx.fillRect(centerX + reactorDistance - tankSize / 2, topY + reactorRadius + tankOffset, tankSize, tankSize);
-
-  // Draw tanks above bottom reactors
-  ctx.fillStyle = "red";
-  ctx.fillRect(
-    centerX - reactorDistance - tankSize / 2,
-    bottomY - reactorRadius - tankOffset - tankSize,
-    tankSize,
-    tankSize
-  );
-  ctx.fillRect(
-    centerX + reactorDistance - tankSize / 2,
-    bottomY - reactorRadius - tankOffset - tankSize,
-    tankSize,
-    tankSize
-  );
 }
 
 // Call resizeCanvas on load
@@ -107,11 +49,6 @@ function closeShape() {
 
   ctx.fillStyle = "red";
   ctx.fill(); // Fill the shape with red
-}
-
-function clearRect() {
-  console.log("clicky flip flip");
-  ctx.clearRect(canvas.width / 2 - 100, canvas.height - 200, 200, 200);
 }
 
 canvas.addEventListener("mousedown", (e) => {
@@ -151,7 +88,6 @@ canvas.addEventListener("mouseup", () => {
     }
     isDrawing = false;
   }
-  createSolidBody(path);
 });
 
 canvas.addEventListener("mouseleave", () => {
