@@ -101,7 +101,7 @@ function draw(e) {
   [lastX, lastY] = [e.offsetX, e.offsetY];
 }
 
-function connectStartToEnd() {
+function closeShape() {
   ctx.lineTo(startX, startY);
   ctx.stroke();
 
@@ -140,7 +140,7 @@ canvas.addEventListener("mousemove", draw);
 canvas.addEventListener("mouseup", () => {
   if (isDrawing) {
     if ((isDrawingBelow && lastY > canvas.height / 2) || (!isDrawingBelow && lastY <= canvas.height / 2)) {
-      connectStartToEnd(); // Connect the end of the drawn line to the start
+      closeShape(); // Connect the end of the drawn line to the start
       shapeCount++;
 
       if (isDrawingBelow && shapeCount >= maxShapesBelow) {
@@ -151,11 +151,12 @@ canvas.addEventListener("mouseup", () => {
     }
     isDrawing = false;
   }
+  createSolidBody(path);
 });
 
 canvas.addEventListener("mouseleave", () => {
   if (isDrawing) {
-    connectStartToEnd();
+    closeShape();
     shapeCount++;
 
     if (isDrawingBelow && shapeCount >= maxShapesBelow) {

@@ -1,4 +1,5 @@
-const { Engine, Render, Runner, Bodies, World, Body, Events } = Matter;
+//#region matter-definitions
+const { Engine, Render, Runner, MouseConstraint, Bodies, World, Body, Events } = Matter;
 
 // Create engine and world.
 const engine = Engine.create();
@@ -12,6 +13,7 @@ const aspectRatio = 1 / 1.4142;
 const baseHeight = window.innerHeight * 0.95;
 const width = baseHeight * aspectRatio;
 const height = baseHeight;
+let startX, startY, lastX, lastY;
 
 const canvas = document.getElementById("gameCanvas");
 canvas.width = width;
@@ -41,6 +43,8 @@ Render.run(render);
 // Create a runner, this allows the engine to be updated for dynamic use within the browser.
 const runner = Runner.create();
 Runner.run(runner, engine);
+
+//#endregion
 
 //Create walls around the canvas to keep game bodies inside the canvas.
 // prettier-ignore
@@ -89,7 +93,7 @@ World.add(world, tank);
 let mouse = Matter.Mouse.create(render.canvas);
 
 // Create the ability for abojects to be able to interact with the mouse input object.
-let mouseConstraint = Matter.MouseConstraint.create(engine, {
+let mouseConstraint = MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
     // Stiffness controls the mouse's ability to be able to move objects around. 0 for non-interactivity.
@@ -199,7 +203,7 @@ function getMousePos(canvas, evt) {
   };
 }
 
-//
+// Shape drawing!
 canvas.addEventListener("mousedown", (e) => {
   let pos = getMousePos(canvas, e);
 
@@ -214,12 +218,23 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 // Push each point of the mousemove into verticies array as mouse moves.
-canvas.addEventListener("mousemove", (e) => {
+canvas.addEventListener("mousemove", draw);
+
+function draw(e) {
   if (isDrawing) {
     let pos = getMousePos(canvas, e);
     vertices.push({ x: pos.x, y: pos.y });
   }
-});
+
+  // if (isDrawingBelow && e.offsetY <= canvas.height / 2) return;
+  // if (!isDrawingBelow && e.offsetY > canvas.height / 2) return;
+
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.strokeStyle = "black"; // Draw lines in black
+  ctx.stroke();
+
+  [lastX, lastY] = [e.offsetX, e.offsetY];
+}
 
 // End vertex tracking on mouse up. Create shape on game board.
 canvas.addEventListener("mouseup", () => {
@@ -230,7 +245,9 @@ canvas.addEventListener("mouseup", () => {
 
 function closeShape(vertices) {
   ctx.beginPath();
-  ctx.moveTo(vertices[0].x, vertices[0].y);
+  ctx.lineTo(vertices[0].x, vertices[0].y);
+  ctx.strokeStyle = "black";
+  ctx.stroke();
   vertices.forEach((v) => ctx.lineTo(v.x, v.y));
   ctx.closePath();
 }
@@ -240,5 +257,6 @@ function createSolidBody(vertices) {
     isStatic: true,
     render: { fillStyle: "transparent", strokeStyle: "black", lineWidth: 2 },
   });
+  console.log("===", body.vertices[0].x);
   Matter.World.add(world, body);
 }
