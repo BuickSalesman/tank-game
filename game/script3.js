@@ -286,7 +286,9 @@ function drawDividingLine() {
 //To increase power meter when called.
 //INCREASE POWER CALLED IN BEFOREUPDATE
 function increasePower() {
-  if (powerLevel < maxPowerLevel) {
+  if (!actionMode) {
+    return;
+  } else if (powerLevel < maxPowerLevel) {
     powerLevel += 1;
     powerLevel = Math.min(powerLevel, 100); // Ensure power meter does not exceed 100.
     powerMeterFill.style.height = `${powerLevel}%`;
@@ -324,18 +326,30 @@ function releaseAndApplyForce(event) {
 
     // Do fancy math so that the vector does not affect to power of force applied to tank.
     const vectorLength = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+
+    //Avoid division by 0.
+    if (vectorLength === 0) {
+      resetPower();
+      //possibly end player turn here
+      return;
+    }
+
     let normalizedVector = { x: vector.x / vectorLength, y: vector.y / vectorLength };
 
     // Apply force based on the vector, if powerLevel is greater than 0.
     if (powerLevel > 0) {
       //Non-linear scaling for a cleaner repesentation of power.
       const scaledPowerLevel = Math.pow(powerLevel, 1.5);
-
       const forceMagnitude = scaledPowerLevel * 0.0158;
-      Body.applyForce(tank1, tank1.position, {
-        x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
-        y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
-      });
+
+      if (actionMode === "move") {
+        Body.applyForce(tank1, tank1.position, {
+          x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
+          y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
+        });
+      } else if (actionMode === "shoot") {
+        //do stuff
+      }
     }
 
     // Ensure that power meter and other values are reset after mouseup.
