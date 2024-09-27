@@ -141,6 +141,7 @@ let reactors = [reactor1, reactor2, reactor3, reactor4];
 //#endregion REACTOR VARIABLES
 
 //#region SHELL VARIABLES
+let shell = null;
 //#endregion SHELL VARIABLES
 
 //#endregion BODY VARIABLES
@@ -199,6 +200,22 @@ Events.on(engine, "beforeUpdate", () => {
   }
 });
 //#endregion BEFOREUPDATE HANDLER
+
+//#region AFTERUPDATE HANDLER
+Events.on(engine, "afterUpdate", function () {
+  if (shell !== null) {
+    const velocityMagnitude = Math.sqrt(shell.velocity.x * shell.velocity.x + shell.velocity.y * shell.velocity.y);
+
+    // Set a small threshold value for determining when the shell is "resting."
+    if (velocityMagnitude < 0.1) {
+      // Adjust this value as necessary
+      World.remove(world, shell);
+      shell = null;
+      console.log("Shell removed from world.");
+    }
+  }
+});
+//#endregion AFTERUPDATE HANDLER
 
 //#region BUTTON EVENT HANDLERS
 document.getElementById("moveButton").addEventListener("click", function () {
@@ -395,11 +412,19 @@ function releaseAndApplyForce(event) {
           y: -normalizedVector.y * forceMagnitude * 5, //delete the quintuple multipler later this is just for fun
         };
 
+        let playerId;
+        if (selectedTank === tank1 || selectedTank === tank2) {
+          playerId = "PLAYER_ONE";
+        } else if (selectedTank === tank3 || selectedTank === tank4) {
+          playerId = "PLAYER_TWO";
+        }
+
         //Create the shell with initial velocity.
-        const shell = ShellModule.createShell(shellX, shellY, shellSize, initialVelocity);
+        shell = ShellModule.createShell(shellX, shellY, shellSize, initialVelocity, playerId);
 
         //Add shell to the world.
         World.add(world, shell);
+        console.log(shell.playerId);
       }
     }
 
