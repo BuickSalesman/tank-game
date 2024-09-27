@@ -1,7 +1,8 @@
 const ShellModule = {
-  createShell: function (x, y, shellSize, initialVelocity) {
+  createShell: function (x, y, shellSize, initialVelocity, playerId) {
     const shell = Matter.Bodies.circle(x, y, shellSize / 2, {
       label: "Shell",
+      playerId: playerId,
       restitution: 0.1,
       friction: 1,
       frictionAir: 0.1,
