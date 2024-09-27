@@ -270,6 +270,17 @@ World.add(world, reactors);
 
 //#region MOUSE EVENTS
 
+//######################################
+//######################################
+//######################################
+//######################################
+
+//NEED TO REFACTOR THE DRAWING IN THE MOUSEEVENTS, BUT ITS WORKING.
+
+//######################################
+//######################################
+//######################################
+//######################################
 Events.on(mouseConstraint, "mousedown", function (event) {
   if (currentGameState === GameState.TUTORIAL) {
     //teach stuff
@@ -318,7 +329,16 @@ Events.on(mouseConstraint, "mouseup", function (event) {
   }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
+
+    //End drawing.
     isDrawing = false;
+
+    if (drawingPath.length > 1) {
+      drawingPath.push(drawingPath[0]);
+    }
+
+    //Create solid body out of drawing.
+    createMatterBodyFromDrawing();
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -363,6 +383,57 @@ function drawDividingLine() {
 
 function draw(event) {
   if (!isDrawing) return;
+}
+
+//NEED TO REFACTOR EVERYTHING BELOW THIS POINT!!!!
+
+function createMatterBodyFromDrawing() {
+  // Convert the drawingPath into an array of vertices that Matter.js can understand
+  const vertices = drawingPath.map((point) => {
+    return { x: point.x, y: point.y };
+  });
+
+  const centroid = calculateCentroid(vertices);
+
+  // Create the body from the vertices
+  const body = Bodies.fromVertices(centroid.x, centroid.y, [vertices], {
+    isStatic: true,
+    render: {
+      fillStyle: "transparent",
+      strokeStyle: "black",
+      lineWidth: 2,
+    },
+  });
+
+  // Add the new body to the Matter.js world
+  if (body) {
+    World.add(world, body);
+  }
+
+  shapeCount++;
+
+  if (shapeCount === 10) {
+    currentGameState = GameState.GAME_RUNNING;
+  }
+}
+
+// Calculate the centroid of a polygon given its vertices
+function calculateCentroid(vertices) {
+  let xSum = 0,
+    ySum = 0;
+  const numVertices = vertices.length;
+
+  // Sum the x and y coordinates
+  vertices.forEach((vertex) => {
+    xSum += vertex.x;
+    ySum += vertex.y;
+  });
+
+  // Calculate the average x and y positions to find the centroid
+  return {
+    x: xSum / numVertices,
+    y: ySum / numVertices,
+  };
 }
 
 //#endregion DRAWING FUNCTIONS
