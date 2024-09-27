@@ -110,23 +110,31 @@ const walls = [
 
 let tankSize = width * 0.025; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
 
-//Change the points where the tanks are edded into the game world to percentages of canvas size, change to add 2 above and 2 below the dividing line.
-let tank1 = TankModule.createTank(width / 2, height - 200, tankSize, PLAYER_ONE);
-let tank2 = TankModule.createTank(width / 2, height - 200, tankSize, PLAYER_ONE);
-let tank3 = TankModule.createTank(width / 2, height - 200, tankSize, PLAYER_TWO);
-let tank4 = TankModule.createTank(width / 2, height - 200, tankSize, PLAYER_TWO);
+//Player 1's tanks.
+let tank1 = TankModule.createTank(width * 0.4, height * 0.9, tankSize, PLAYER_ONE);
+let tank2 = TankModule.createTank(width * 0.6, height * 0.9, tankSize, PLAYER_ONE);
+
+//Player 2's tanks.
+let tank3 = TankModule.createTank(width * 0.4, height * 0.1, tankSize, PLAYER_TWO);
+let tank4 = TankModule.createTank(width * 0.6, height * 0.1, tankSize, PLAYER_TWO);
 
 //#endregion TANK VARIABLES
 //#region REACTOR VARIABLES
 let reactorSize = tankSize * 1.25;
 
-const reactor1 = ReactorModule.createReactor(400, 200, reactorSize, PLAYER_ONE);
-const reactor2 = ReactorModule.createReactor(400, 200, reactorSize, PLAYER_ONE);
-const reactor3 = ReactorModule.createReactor(400, 200, reactorSize, PLAYER_TWO);
-const reactor4 = ReactorModule.createReactor(400, 200, reactorSize, PLAYER_TWO);
+//Player 1's reactors.
+const reactor1 = ReactorModule.createReactor(width * 0.4, height * 0.95, reactorSize, PLAYER_ONE);
+const reactor2 = ReactorModule.createReactor(width * 0.6, height * 0.95, reactorSize, PLAYER_ONE);
+
+//Player 2's reactors.
+const reactor3 = ReactorModule.createReactor(width * 0.4, height * 0.05, reactorSize, PLAYER_TWO);
+const reactor4 = ReactorModule.createReactor(width * 0.6, height * 0.05, reactorSize, PLAYER_TWO);
+
 //#endregion REACTOR VARIABLES
+
 //#region SHELL VARIABLES
 //#endregion SHELL VARIABLES
+
 //#endregion BODY VARIABLES
 
 //#region DRAWING VARIABLES
@@ -207,10 +215,10 @@ document.getElementById("shootButton").addEventListener("click", function () {
 World.add(world, walls);
 
 //Add tank(s) to the game world.
-World.add(world, tank1);
+World.add(world, [tank1, tank2, tank3, tank4]);
 
 //Add reactor(s) to the game world.
-World.add(world, reactor1);
+World.add(world, [reactor1, reactor2, reactor3, reactor4]);
 
 //#endregion BODY CREATIONS
 
