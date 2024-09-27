@@ -446,7 +446,7 @@ function increasePower() {
   if (!actionMode) {
     return;
   } else if (powerLevel < maxPowerLevel) {
-    powerLevel += 1;
+    powerLevel += 8;
     powerLevel = Math.min(powerLevel, 100); //Ensure power meter does not exceed 100.
     powerMeterFill.style.height = `${powerLevel}%`;
   }
@@ -545,3 +545,9 @@ function releaseAndApplyForce(event) {
 //#endregion MOVE AND SHOOT FUNCTIONS
 
 //#endregion FUNCTIONS
+
+//BUG LOG
+//Bug where if you don't remove your mouse from the tank when shooting, the shell does not disappear
+//Bug where the blue drawing line does not disappear after the last shape is drawn
+//Bug where if you draw convex or sharp shapes, the rendered bodies do are blobular instead
+//Bug where the rendered shape is offset just a bit from where it is drawn
