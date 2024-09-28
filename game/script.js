@@ -1,7 +1,10 @@
 //#region MATTER SETUP
+
 const { Bounds, Engine, MouseConstraint, Mouse, Render, Runner, Body, Bodies, World, Events, Detector, Vertices } =
   Matter;
 
+//Use poly-decomp library to assist with accurately representing convex polygons.
+console.log(window.decomp);
 //#region VARIABLES
 
 //Game state setup.
