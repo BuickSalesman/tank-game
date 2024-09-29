@@ -1,10 +1,22 @@
 //#region MATTER SETUP
 
-const { Bounds, Engine, MouseConstraint, Mouse, Render, Runner, Body, Bodies, World, Events, Detector, Vertices } =
-  Matter;
+const {
+  Bounds,
+  Engine,
+  MouseConstraint,
+  Mouse,
+  Render,
+  Runner,
+  Body,
+  Bodies,
+  World,
+  Events,
+  Detector,
+  Vertices,
+  decomp,
+} = Matter;
 
 //Use poly-decomp library to assist with accurately representing convex polygons.
-console.log(window.decomp);
 //#region VARIABLES
 
 //Game state setup.
@@ -204,17 +216,7 @@ World.add(world, mouseConstraint);
 //#region AFTERRENDER HANDLER
 Events.on(render, "afterRender", function () {
   drawDividingLine();
-
-  if (drawingPath.length > 0) {
-    ctx.beginPath();
-    ctx.moveTo(drawingPath[0].x, drawingPath[0].y);
-    for (let i = 1; i < drawingPath.length; i++) {
-      ctx.lineTo(drawingPath[i].x, drawingPath[i].y);
-    }
-    ctx.strokeStyle = "blue"; // Set the stroke color for the drawing
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
+  setTimeout(draw(event), 100000000);
 });
 //#endregion AFTERRENDER HANDLER
 
@@ -316,6 +318,7 @@ Events.on(mouseConstraint, "mousemove", function (event) {
     //draw stuff
     if (isDrawing) {
       drawingPath.push({ x: mouse.position.x, y: mouse.position.y });
+      console.log(drawingPath);
     }
   }
   if (currentGameState === GameState.GAME_RUNNING) {
@@ -386,6 +389,17 @@ function drawDividingLine() {
 
 function draw(event) {
   if (!isDrawing) return;
+
+  if (drawingPath.length > 0) {
+    ctx.beginPath();
+    ctx.moveTo(drawingPath[0].x, drawingPath[0].y);
+    for (let i = 1; i < drawingPath.length; i++) {
+      ctx.lineTo(drawingPath[i].x, drawingPath[i].y);
+    }
+    ctx.strokeStyle = "blue"; // Set the stroke color for the drawing
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
 }
 
 //NEED TO REFACTOR EVERYTHING BELOW THIS POINT!!!!
@@ -400,6 +414,7 @@ function createMatterBodyFromDrawing() {
 
   // Create the body from the vertices
   const body = Bodies.fromVertices(centroid.x, centroid.y, [vertices], {
+    ignoreBoundaryLimit: true,
     isStatic: true,
     render: {
       fillStyle: "transparent",
@@ -449,7 +464,7 @@ function increasePower() {
   if (!actionMode) {
     return;
   } else if (powerLevel < maxPowerLevel) {
-    powerLevel += 8;
+    powerLevel += 5;
     powerLevel = Math.min(powerLevel, 100); //Ensure power meter does not exceed 100.
     powerMeterFill.style.height = `${powerLevel}%`;
   }
