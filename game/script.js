@@ -571,5 +571,6 @@ function releaseAndApplyForce(event) {
 //Bug where the rendered shape is offset just a bit from where it is drawn
 //Bug where shapes should not be allowed to overlap
 //Bug where tanks are propelled further relative to smallness of window/canvas
+//Poly-decomp lol
 
 //#endregion BUG LOG
