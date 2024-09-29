@@ -24,17 +24,26 @@ const baseHeight = window.innerHeight * 0.95;
 const width = baseHeight * aspectRatio;
 const height = baseHeight;
 
-// Declare canvas and context.
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+// Get both canvases
+const drawCanvas = document.getElementById("drawCanvas"); // For drawing
+const physicsCanvas = document.getElementById("physicsCanvas"); // For Matter.js rendering
 
-// Declare gameContainer
+// Declare contexts for both canvases.
+const drawCtx = drawCanvas.getContext("2d");
+
+// Set canvas sizes (both should be the same size)
+drawCanvas.width = physicsCanvas.width = width;
+drawCanvas.height = physicsCanvas.height = height;
+
+// Setup gameContainer
 const gameContainer = document.getElementById("gameContainer");
+gameContainer.style.width = `${width}px`;
+gameContainer.style.height = `${height}px`;
 
-// Declare and create Matter.js renderer bound to the canvas.
+// Declare and create Matter.js renderer bound to the physics canvas.
 const render = Render.create({
   element: gameContainer,
-  canvas: canvas,
+  canvas: physicsCanvas, // Use physicsCanvas for Matter.js rendering
   engine: engine,
   options: {
     width: width,
@@ -54,12 +63,15 @@ let mouse = Mouse.create(render.canvas);
 let mouseConstraint = MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
-    stiffness: 0.0,
+    stiffness: 0.2, // Allow a bit of elasticity while dragging
     render: {
-      visible: false,
+      visible: true, // Make the mouse constraint visible while dragging
     },
   },
 });
+
+// Add mouseConstraint to the world
+World.add(world, mouseConstraint);
 
 let isDrawing = false;
 let drawingPath = [];
@@ -71,26 +83,15 @@ const lineInterval = 10; // 100 milliseconds
 engine.world.gravity.y = 0;
 engine.world.gravity.x = 0;
 
-// Set the canvas height and width.
-canvas.width = width;
-canvas.height = height;
-
-// Setup gameContainer.
-gameContainer.style.width = `${width}px`;
-gameContainer.style.height = `${height}px`;
-
 // Run renderer.
 Render.run(render);
 
 // Run the runner, this allows the engine to be updated for dynamic use within the browser.
 Runner.run(runner, engine);
 
-// Add the ability for mouse input into the physics world.
-World.add(world, mouseConstraint);
-
 //#region AFTERRENDER HANDLER
 Events.on(render, "afterRender", function () {
-  draw();
+  // No need to draw here; use the drawCanvas for drawing
 });
 //#endregion AFTERRENDER HANDLER
 
@@ -131,6 +132,7 @@ Events.on(mouseConstraint, "mouseup", function (event) {
     // Close the shape by connecting the last point to the first point
     drawingPath.push(drawingPath[0]);
     allPaths.push([...drawingPath]); // Add the completed path to allPaths
+    createMatterBodyFromDrawing(drawingPath); // Create Matter.js body from the drawn path
     drawingPath = []; // Reset the current drawing path for the next shape
   }
 });
@@ -139,30 +141,100 @@ Events.on(mouseConstraint, "mouseleave", function (event) {
   isDrawing = false;
 });
 
+// Drawing on the drawCanvas (separate from the Matter.js canvas)
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas before drawing
+  if (isDrawing) {
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); // Clear the drawing canvas before drawing
 
-  // Draw all completed shapes
-  allPaths.forEach((path) => {
-    ctx.beginPath();
-    ctx.moveTo(path[0].x, path[0].y);
-    for (let i = 1; i < path.length; i++) {
-      ctx.lineTo(path[i].x, path[i].y);
-    }
-    ctx.strokeStyle = "blue"; // Set the stroke color for the drawing
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  });
+    // Draw all completed shapes
+    allPaths.forEach((path) => {
+      drawCtx.beginPath();
+      drawCtx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        drawCtx.lineTo(path[i].x, path[i].y);
+      }
+      drawCtx.strokeStyle = "blue"; // Set the stroke color for the drawing
+      drawCtx.lineWidth = 2;
+      drawCtx.stroke();
+    });
 
-  // If currently drawing, draw the current path
-  if (isDrawing && drawingPath.length > 0) {
-    ctx.beginPath();
-    ctx.moveTo(drawingPath[0].x, drawingPath[0].y);
-    for (let i = 1; i < drawingPath.length; i++) {
-      ctx.lineTo(drawingPath[i].x, drawingPath[i].y);
+    // If currently drawing, draw the current path
+    if (isDrawing && drawingPath.length > 0) {
+      drawCtx.beginPath();
+      drawCtx.moveTo(drawingPath[0].x, drawingPath[0].y);
+      for (let i = 1; i < drawingPath.length; i++) {
+        drawCtx.lineTo(drawingPath[i].x, drawingPath[i].y);
+      }
+      drawCtx.strokeStyle = "blue"; // Set the stroke color for the drawing
+      drawCtx.lineWidth = 2;
+      drawCtx.stroke();
     }
-    ctx.strokeStyle = "blue"; // Set the stroke color for the drawing
-    ctx.lineWidth = 2;
-    ctx.stroke();
   }
 }
+// Function to convert the drawn shape into a Matter.js body
+function createMatterBodyFromDrawing(path) {
+  // Convert the path into an array of vertices that Matter.js can understand,
+  // using absolute screen coordinates.
+  const vertices = path.map((point) => {
+    return { x: point.x, y: point.y };
+  });
+
+  // Calculate the centroid manually from the vertices
+  const centroid = calculateCentroid(vertices);
+
+  // Adjust vertices to be relative to the centroid (Matter.js expects local coordinates)
+  const relativeVertices = vertices.map((point) => ({
+    x: point.x - centroid.x,
+    y: point.y - centroid.y,
+  }));
+
+  // Create the body at the centroid
+  const body = Bodies.fromVertices(centroid.x, centroid.y, [relativeVertices], {
+    ignoreBoundaryLimit: true,
+    isStatic: false, // Allow the body to be draggable and movable
+    render: {
+      fillStyle: "transparent", // You can set this to a color if you want the shape to be filled
+      strokeStyle: "black",
+      lineWidth: 2,
+    },
+    // Chamfer to smooth out the vertices and prevent sharp edges
+    chamfer: {
+      radius: 200, // Set this to control the amount of smoothing at vertices
+    },
+  });
+
+  // Add the new body to the Matter.js world
+  if (body) {
+    World.add(world, body);
+
+    // Clear the draw canvas after the body is created
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  }
+}
+
+// Calculate the centroid of a polygon given its vertices (average x and y positions)
+function calculateCentroid(vertices) {
+  let xSum = 0,
+    ySum = 0;
+  const numVertices = vertices.length;
+
+  // Sum the x and y coordinates
+  vertices.forEach((vertex) => {
+    xSum += vertex.x;
+    ySum += vertex.y;
+  });
+
+  // Calculate the average x and y positions to find the centroid
+  return {
+    x: xSum / numVertices,
+    y: ySum / numVertices,
+  };
+}
+
+// Call the draw function on every frame
+function animate() {
+  requestAnimationFrame(animate);
+  draw();
+}
+
+animate(); // Start the drawing loop
