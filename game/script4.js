@@ -199,7 +199,7 @@ function createMatterBodyFromDrawing(path) {
     },
     // Chamfer to smooth out the vertices and prevent sharp edges
     chamfer: {
-      radius: 200, // Set this to control the amount of smoothing at vertices
+      radius: 200000, // Set this to control the amount of smoothing at vertices
     },
   });
 

@@ -1,4 +1,4 @@
-//#region MATTER SETUP
+//#region MATTER AND SOCKET SETUP
 
 const {
   Bounds,
@@ -12,9 +12,12 @@ const {
   World,
   Events,
   Detector,
+  Collision,
   Vertices,
   decomp,
 } = Matter;
+
+// const socket = io();
 
 //Use poly-decomp library to assist with accurately representing convex polygons.
 //#region VARIABLES
@@ -168,6 +171,9 @@ const dividingLine = canvas.height / 2;
 //Counter for number of shapes drawn.
 let shapeCount = 0;
 
+//Maximum number of shapes
+let maxShapeCount = 2;
+
 //Initial state allows drawing below dividingLine.
 let isDrawingBelow = true;
 
@@ -227,6 +233,36 @@ Events.on(engine, "beforeUpdate", () => {
   }
 });
 //#endregion BEFOREUPDATE HANDLER
+
+Events.on(engine, "collisionStart", function (event) {
+  function bodiesMatch(bodyA, bodyB, label1, label2) {
+    return (bodyA.label === label1 && bodyB.label === label2) || (bodyA.label === label2 && bodyB.label === label1);
+  }
+  var pairs = event.pairs;
+
+  pairs.forEach((pair) => {
+    console.log(pair);
+    const { bodyA, bodyB } = pair;
+
+    // Check if a tank collided with a shell
+    if (bodiesMatch(bodyA, bodyB, "tank", "shell")) {
+      console.log("Tank hit by shell!");
+      // Handle the collision between tank and shell
+    }
+
+    // Check if a shell collided with a reactor
+    if (bodiesMatch(bodyA, bodyB, "shell", "reactor")) {
+      console.log("Shell hit a reactor!");
+      // Handle the collision between shell and reactor
+    }
+
+    // Add more conditions for other body types like turrets, etc.
+    if (bodiesMatch(bodyA, bodyB, "tank", "turret")) {
+      console.log("Tank hit a turret!");
+      // Handle collision between tank and turret
+    }
+  });
+});
 
 //#region AFTERUPDATE HANDLER
 Events.on(engine, "afterUpdate", function () {
@@ -294,7 +330,7 @@ Events.on(mouseConstraint, "mousedown", function (event) {
     //draw stuff
 
     //Prevent drawing if max shapes is reached.
-    if (shapeCount >= 10) return;
+    if (shapeCount >= maxShapeCount) return;
 
     isDrawing = true;
     drawingPath = [];
@@ -417,7 +453,7 @@ function createMatterBodyFromDrawing() {
     ignoreBoundaryLimit: true,
     isStatic: true,
     render: {
-      fillStyle: "transparent",
+      fillStyle: "rgba(0, 0, 0, 0.5)",
       strokeStyle: "black",
       lineWidth: 2,
     },
@@ -430,7 +466,7 @@ function createMatterBodyFromDrawing() {
 
   shapeCount++;
 
-  if (shapeCount === 10) {
+  if (shapeCount === maxShapeCount) {
     currentGameState = GameState.GAME_RUNNING;
   }
 }
