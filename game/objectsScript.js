@@ -122,6 +122,8 @@ const walls = [
 
 let tankSize = width * 0.025; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
 
+let tankHitPoints = 2;
+
 //Player 1's tanks.
 let tank1 = TankModule.createTank(width * 0.3525, height * 0.9, tankSize, PLAYER_ONE);
 let tank2 = TankModule.createTank(width * 0.4275, height * 0.9, tankSize, PLAYER_ONE);
@@ -137,6 +139,8 @@ let tanks = [tank1, tank2, tank3, tank4];
 
 //#region REACTOR VARIABLES
 let reactorSize = tankSize;
+
+let reactorHitPoints = 1;
 
 //Player 1's reactors.
 const reactor1 = ReactorModule.createReactor(width * 0.3525, height * 0.95, reactorSize, PLAYER_ONE);
@@ -169,6 +173,8 @@ let fortresses = [fortress1, fortress2];
 //#region TURRET VARIABLES
 let turretSize = reactorSize * 1.125;
 
+let turretHitPoints = 2;
+
 //Player 1's turrets
 const turret1 = TurretModule.createTurret(width * 0.31625, height * 0.92125, turretSize, PLAYER_ONE);
 const turret2 = TurretModule.createTurret(width * 0.46375, height * 0.92125, turretSize, PLAYER_ONE);
@@ -184,6 +190,8 @@ let turrets = [turret1, turret2, turret3, turret4];
 
 //#region SHELL VARIABLES
 let shell = null;
+let shells = [];
+
 //#endregion SHELL VARIABLES
 
 //#endregion BODY VARIABLES
@@ -477,7 +485,8 @@ function releaseAndApplyForce(event) {
         const shellSize = 5; // Adjust as needed
 
         //Position the shell at the front of the tank.
-        const shellOffset = tankSize / 2 + shellSize / 2;
+        const unitSize = selectedUnit.label === "tank" ? tankSize : turretSize;
+        const shellOffset = unitSize / 2 + shellSize / 2;
         const shellX = selectedUnit.position.x - normalizedVector.x * shellOffset;
         const shellY = selectedUnit.position.y - normalizedVector.y * shellOffset;
 
@@ -503,6 +512,7 @@ function releaseAndApplyForce(event) {
 
         //Add shell to the world.
         World.add(world, shell);
+
         console.log(shell.playerId);
       }
     }
