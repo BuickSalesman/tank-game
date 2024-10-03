@@ -132,12 +132,11 @@ let tank4 = TankModule.createTank(width * 0.5725, height * 0.1, tankSize, PLAYER
 
 //Store all tanks in an array for easy access.
 let tanks = [tank1, tank2, tank3, tank4];
-let selectedTank = null;
 
 //#endregion TANK VARIABLES
 
 //#region REACTOR VARIABLES
-let reactorSize = tankSize * 1.25;
+let reactorSize = tankSize;
 
 //Player 1's reactors.
 const reactor1 = ReactorModule.createReactor(width * 0.3525, height * 0.95, reactorSize, PLAYER_ONE);
@@ -156,14 +155,31 @@ let reactors = [reactor1, reactor2, reactor3, reactor4];
 let fortressWidth = width * 0.1475;
 let fortressHeight = height * 0.0575;
 
+//Player 1's fortress.
 let fortress1 = FortressModule.createFortress(width * 0.39, height * 0.95, fortressWidth, fortressHeight, PLAYER_ONE);
-let fortress2 = FortressModule.createFortress(width * 0.61, height * 0.05, fortressWidth, fortressHeight, PLAYER_ONE);
 
+//Player 2's fortress.
+let fortress2 = FortressModule.createFortress(width * 0.61, height * 0.05, fortressWidth, fortressHeight, PLAYER_TWO);
+
+//Store all fortresses in an array for easy access.
 let fortresses = [fortress1, fortress2];
 
 //#endregion FORTRESS VARIABLES
 
 //#region TURRET VARIABLES
+let turretSize = reactorSize * 1.125;
+
+//Player 1's turrets
+const turret1 = TurretModule.createTurret(width * 0.31625, height * 0.92125, turretSize, PLAYER_ONE);
+const turret2 = TurretModule.createTurret(width * 0.46375, height * 0.92125, turretSize, PLAYER_ONE);
+
+//Player 2's turrets.
+const turret3 = TurretModule.createTurret(width * 0.53625, height * 0.07875, turretSize, PLAYER_TWO);
+const turret4 = TurretModule.createTurret(width * 0.68375, height * 0.07875, turretSize, PLAYER_TWO);
+
+//Store all turrets in an array for easy access.
+let turrets = [turret1, turret2, turret3, turret4];
+
 //#endregion TURRET VARIABLES
 
 //#region SHELL VARIABLES
@@ -175,6 +191,9 @@ let shell = null;
 //#region MOVE AND SHOOT VARIABLES
 const powerButton = document.getElementById("powerButton");
 const powerMeterFill = document.getElementById("powerMeterFill");
+
+//To store selected tank or turret.
+let selectedUnit = null;
 
 let powerLevel = 0;
 const maxPowerLevel = 100;
@@ -216,7 +235,14 @@ Events.on(render, "afterRender", function () {});
 //#region BEFOREUPDATE HANDLER
 Events.on(engine, "beforeUpdate", () => {
   if (currentGameState === GameState.GAME_RUNNING && isMouseDown) {
-    increasePower();
+    if (
+      (selectedUnit === turret1 || selectedUnit === turret2 || selectedUnit === turret3 || selectedUnit === turret4) &&
+      actionMode === "move"
+    ) {
+      return;
+    } else {
+      increasePower();
+    }
   }
 });
 //#endregion BEFOREUPDATE HANDLER
@@ -293,8 +319,11 @@ World.add(world, tanks);
 //Add reactor(s) to the game world.
 World.add(world, reactors);
 
-//Add Fortress(es) to the game world.
+//Add fortress(es) to the game world.
 World.add(world, fortresses);
+
+//Add turret(s) to the game world.
+World.add(world, turrets);
 
 //#endregion BODY CREATIONS
 
@@ -394,7 +423,17 @@ function saveClickPoint(event) {
       //Save the point of click.
       startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
       //Store the selected tank.
-      selectedTank = tank;
+      selectedUnit = tank;
+    }
+  });
+
+  turrets.forEach((turret) => {
+    if (Bounds.contains(turret.bounds, mousePosition)) {
+      isMouseDown = true;
+      //Save the point of click.
+      startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
+      //Store the selected turret.
+      selectedUnit = turret;
     }
   });
 }
@@ -430,7 +469,7 @@ function releaseAndApplyForce(event) {
       const forceMagnitude = scaledPowerLevel * 0.0158;
 
       if (actionMode === "move") {
-        Body.applyForce(selectedTank, selectedTank.position, {
+        Body.applyForce(selectedUnit, selectedUnit.position, {
           x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
           y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
         });
@@ -439,8 +478,8 @@ function releaseAndApplyForce(event) {
 
         //Position the shell at the front of the tank.
         const shellOffset = tankSize / 2 + shellSize / 2;
-        const shellX = selectedTank.position.x - normalizedVector.x * shellOffset;
-        const shellY = selectedTank.position.y - normalizedVector.y * shellOffset;
+        const shellX = selectedUnit.position.x - normalizedVector.x * shellOffset;
+        const shellY = selectedUnit.position.y - normalizedVector.y * shellOffset;
 
         const initialVelocity = {
           x: -normalizedVector.x * forceMagnitude * 5, //delete the quintuple multipler later this is just for fun
@@ -448,9 +487,14 @@ function releaseAndApplyForce(event) {
         };
 
         let playerId;
-        if (selectedTank === tank1 || selectedTank === tank2) {
+        if (selectedUnit === tank1 || selectedUnit === tank2 || selectedUnit === turret1 || selectedUnit === turret2) {
           playerId = "PLAYER_ONE";
-        } else if (selectedTank === tank3 || selectedTank === tank4) {
+        } else if (
+          selectedUnit === tank3 ||
+          selectedUnit === tank4 ||
+          selectedUnit === turret3 ||
+          selectedUnit === turret4
+        ) {
           playerId = "PLAYER_TWO";
         }
 
