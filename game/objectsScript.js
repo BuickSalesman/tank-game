@@ -123,12 +123,12 @@ const walls = [
 let tankSize = width * 0.025; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
 
 //Player 1's tanks.
-let tank1 = TankModule.createTank(width * 0.4, height * 0.9, tankSize, PLAYER_ONE);
-let tank2 = TankModule.createTank(width * 0.6, height * 0.9, tankSize, PLAYER_ONE);
+let tank1 = TankModule.createTank(width * 0.3525, height * 0.9, tankSize, PLAYER_ONE);
+let tank2 = TankModule.createTank(width * 0.4275, height * 0.9, tankSize, PLAYER_ONE);
 
 //Player 2's tanks.
-let tank3 = TankModule.createTank(width * 0.4, height * 0.1, tankSize, PLAYER_TWO);
-let tank4 = TankModule.createTank(width * 0.6, height * 0.1, tankSize, PLAYER_TWO);
+let tank3 = TankModule.createTank(width * 0.6475, height * 0.1, tankSize, PLAYER_TWO);
+let tank4 = TankModule.createTank(width * 0.5725, height * 0.1, tankSize, PLAYER_TWO);
 
 //Store all tanks in an array for easy access.
 let tanks = [tank1, tank2, tank3, tank4];
@@ -140,17 +140,31 @@ let selectedTank = null;
 let reactorSize = tankSize * 1.25;
 
 //Player 1's reactors.
-const reactor1 = ReactorModule.createReactor(width * 0.4, height * 0.95, reactorSize, PLAYER_ONE);
-const reactor2 = ReactorModule.createReactor(width * 0.6, height * 0.95, reactorSize, PLAYER_ONE);
+const reactor1 = ReactorModule.createReactor(width * 0.3525, height * 0.95, reactorSize, PLAYER_ONE);
+const reactor2 = ReactorModule.createReactor(width * 0.4275, height * 0.95, reactorSize, PLAYER_ONE);
 
 //Player 2's reactors.
-const reactor3 = ReactorModule.createReactor(width * 0.4, height * 0.05, reactorSize, PLAYER_TWO);
-const reactor4 = ReactorModule.createReactor(width * 0.6, height * 0.05, reactorSize, PLAYER_TWO);
+const reactor3 = ReactorModule.createReactor(width * 0.6475, height * 0.05, reactorSize, PLAYER_TWO);
+const reactor4 = ReactorModule.createReactor(width * 0.5725, height * 0.05, reactorSize, PLAYER_TWO);
 
 //Store all reactors in an array for easy access.
 let reactors = [reactor1, reactor2, reactor3, reactor4];
 
 //#endregion REACTOR VARIABLES
+
+//#region FORTRESS VARIABLES
+let fortressWidth = width * 0.1475;
+let fortressHeight = height * 0.0575;
+
+let fortress1 = FortressModule.createFortress(width * 0.39, height * 0.95, fortressWidth, fortressHeight, PLAYER_ONE);
+let fortress2 = FortressModule.createFortress(width * 0.61, height * 0.05, fortressWidth, fortressHeight, PLAYER_ONE);
+
+let fortresses = [fortress1, fortress2];
+
+//#endregion FORTRESS VARIABLES
+
+//#region TURRET VARIABLES
+//#endregion TURRET VARIABLES
 
 //#region SHELL VARIABLES
 let shell = null;
@@ -278,6 +292,9 @@ World.add(world, tanks);
 
 //Add reactor(s) to the game world.
 World.add(world, reactors);
+
+//Add Fortress(es) to the game world.
+World.add(world, fortresses);
 
 //#endregion BODY CREATIONS
 
