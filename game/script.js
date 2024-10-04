@@ -51,6 +51,7 @@ const physicsCanvas = document.getElementById("physicsCanvas"); // For Matter.js
 
 // Declare contexts for both canvases.
 const drawCtx = drawCanvas.getContext("2d");
+const physicsCtx = physicsCanvas.getContext("2d");
 
 // Set canvas sizes (both should be the same size)
 drawCanvas.width = physicsCanvas.width = width;
@@ -269,7 +270,10 @@ World.add(world, mouseConstraint);
 //#region EVENT HANDLERS
 
 //#region AFTERRENDER HANDLER
-Events.on(render, "afterRender", function () {});
+Events.on(render, "afterRender", function () {
+  drawDividingLine();
+  draw(event);
+});
 //#endregion AFTERRENDER HANDLER
 
 //#region BEFOREUPDATE HANDLER
@@ -390,7 +394,8 @@ Events.on(mouseConstraint, "mousemove", function (event) {
     //teach stuff
   }
   if (currentGameState === GameState.PRE_GAME) {
-    drawOnDrawCanvas(event);
+    //draw stuff
+    draw(event);
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -405,7 +410,12 @@ Events.on(mouseConstraint, "mouseup", function (event) {
     //teach stuff
   }
   if (currentGameState === GameState.PRE_GAME) {
+    //draw stuff
     endDrawing(event);
+    shapeCount++;
+    if (shapeCount === maxShapeCount) {
+      currentGameState = GameState.GAME_RUNNING;
+    }
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -416,13 +426,13 @@ Events.on(mouseConstraint, "mouseup", function (event) {
   }
 });
 
+//MOUSELEAVE CURRENTLY NOT WORKING - PROBABLY HAS TO BE TIED TO THE CANVAS BOUNDARY OR SOMETHING
 Events.on(mouseConstraint, "mouseleave", function (event) {
   if (currentGameState === GameState.TUTORIAL) {
     //teach stuff
   }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
-    endDrawing(event);
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -448,170 +458,122 @@ function drawDividingLine() {
   drawCtx.stroke();
 }
 
-function startDrawing(event) {
+function startDrawing() {
   if (shapeCount >= maxShapeCount) return;
 
   isDrawing = true;
   drawingPath = [];
-  const { mouse } = event;
-  drawingPath.push({ x: mouse.position.x, y: mouse.position.y });
-  lastLineTime = Date.now(); // Initialize time for the first line
+  const mousePosition = mouseConstraint.mouse.position;
+  drawingPath.push({ x: mousePosition.x, y: mousePosition.y });
 }
 
-function drawOnDrawCanvas(event) {
-  if (isDrawing) {
-    const currentTime = Date.now();
-    if (currentTime - lastLineTime >= lineInterval) {
-      drawingPath.push({ x: mouse.position.x, y: mouse.position.y });
-      lastLineTime = currentTime; // Update the time for the next line
+function draw() {
+  if (!isDrawing) return;
+
+  const mousePosition = mouseConstraint.mouse.position;
+
+  drawingPath.push({ x: mousePosition.x, y: mousePosition.y });
+
+  // Begin drawing the path
+  if (drawingPath.length > 0) {
+    drawCtx.beginPath();
+    drawCtx.moveTo(drawingPath[0].x, drawingPath[0].y);
+    for (let i = 1; i < drawingPath.length; i++) {
+      drawCtx.lineTo(drawingPath[i].x, drawingPath[i].y);
     }
+    drawCtx.strokeStyle = "blue"; // Set the stroke color for the drawing
+    drawCtx.lineWidth = 2;
+    drawCtx.stroke();
   }
 }
 
 function endDrawing(event) {
+  // End drawing
   isDrawing = false;
 
   if (drawingPath.length > 1) {
-    // Close the shape by connecting the last point to the first point
-    drawingPath.push(drawingPath[0]);
-    allPaths.push([...drawingPath]); // Add the completed path to allPaths
-    drawingPath.push(drawingPath[0]);
-    createMatterBodyFromDrawing(drawingPath); // Create Matter.js body from the drawn path
-    drawingPath = []; // Reset the current drawing path for the next shape
-  }
-}
+    // Snapping logic remains the same as before
+    const firstPoint = drawingPath[0];
+    const lastPoint = drawingPath[drawingPath.length - 1];
+    const distance = Math.hypot(lastPoint.x - firstPoint.x, lastPoint.y - firstPoint.y);
+    const snapThreshold = 1;
 
-// Drawing on the drawCanvas (separate from the Matter.js canvas)
-function draw() {
-  if (isDrawing) {
-    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); // Clear the drawing canvas before drawing
-
-    drawDividingLine();
-
-    // Draw all completed shapes
-    allPaths.forEach((path) => {
-      drawCtx.beginPath();
-      drawCtx.moveTo(path[0].x, path[0].y);
-      for (let i = 1; i < path.length; i++) {
-        drawCtx.lineTo(path[i].x, path[i].y);
-      }
-      drawCtx.strokeStyle = "blue"; // Set the stroke color for the drawing
-      drawCtx.lineWidth = 2;
-      drawCtx.stroke();
-    });
-
-    // If currently drawing, draw the current path
-    if (isDrawing && drawingPath.length > 0) {
-      drawCtx.beginPath();
-      drawCtx.moveTo(drawingPath[0].x, drawingPath[0].y);
-      for (let i = 1; i < drawingPath.length; i++) {
-        drawCtx.lineTo(drawingPath[i].x, drawingPath[i].y);
-      }
-      drawCtx.strokeStyle = "blue"; // Set the stroke color for the drawing
-      drawCtx.lineWidth = 2;
-      drawCtx.stroke();
+    if (distance <= snapThreshold) {
+      drawingPath[drawingPath.length - 1] = { x: firstPoint.x, y: firstPoint.y };
+    } else {
+      drawingPath.push({ x: firstPoint.x, y: firstPoint.y });
     }
-  }
-}
-// Function to get the centroid of a Matter.js body, accounting for all parts
-function getBodyCentroid(body) {
-  let allVertices = [];
 
-  // Collect all vertices from all parts (excluding the parent body if necessary)
-  if (body.parts.length > 1) {
-    body.parts.forEach((part) => {
-      // Skip the first part, which is the parent body
-      if (part === body) return;
-      allVertices = allVertices.concat(part.vertices);
-    });
-  } else {
-    allVertices = body.vertices;
-  }
-
-  // Calculate the centroid of all vertices
-  const centroid = Vertices.centre(allVertices);
-  return centroid;
-}
-
-// Function to convert the drawn shape into a js body
-function createMatterBodyFromDrawing(path) {
-  // Convert the path into an array of vertices using absolute screen coordinates
-  const vertices = path.map((point) => ({
-    x: point.x,
-    y: point.y,
-  }));
-
-  // Use js to calculate the centroid of the drawing vertices
-  const drawingCentroid = Vertices.centre(vertices);
-  console.log("Drawing centroid (js):", drawingCentroid);
-
-  // Adjust vertices to be relative to the drawing centroid
-  const relativeVertices = vertices.map((vertex) => ({
-    x: vertex.x - drawingCentroid.x,
-    y: vertex.y - drawingCentroid.y,
-  }));
-
-  // Create the body at the drawing centroid with the adjusted vertices
-  const body = Bodies.fromVertices(
-    drawingCentroid.x,
-    drawingCentroid.y,
-    [relativeVertices],
-    {
-      ignoreBoundaryLimit: true,
-      isStatic: true,
-      render: {
-        fillStyle: "rgba(0, 0, 0, 0.5)",
-        strokeStyle: "black",
-        lineWidth: 2,
-      },
-      // Chamfer can be re-enabled if needed
-      // chamfer: {
-      //   radius: 20,
-      // },
-    },
-    true // Automatically handle decomposition
-  );
-
-  if (body) {
-    // After creating the body, calculate its actual centroid
-    const bodyCentroid = getBodyCentroid(body);
-    console.log("Initial body centroid:", bodyCentroid);
-
-    // Compute the offset between the drawing centroid and the body's actual centroid
-    const offset = {
-      x: drawingCentroid.x - bodyCentroid.x,
-      y: drawingCentroid.y - bodyCentroid.y,
-    };
-
-    // Translate the body by this offset to align the centroids
-    Body.translate(body, offset);
-
-    // Add the new body to the js world
-    World.add(world, body);
-
-    // Verify the centroid after adjustment
-    const adjustedCentroid = getBodyCentroid(body);
-    console.log("Adjusted body centroid:", adjustedCentroid);
-
-    // Clear the draw canvas after the body is created
+    // Clear the canvas and redraw the final shape
     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    drawDividingLine(); // Re-draw the dividing line if necessary
 
-    shapeCount++;
-
-    if (shapeCount === maxShapeCount) {
-      currentGameState = GameState.GAME_RUNNING;
+    drawCtx.beginPath();
+    drawCtx.moveTo(drawingPath[0].x, drawingPath[0].y);
+    for (let i = 1; i < drawingPath.length; i++) {
+      drawCtx.lineTo(drawingPath[i].x, drawingPath[i].y);
     }
+    drawCtx.closePath();
+    drawCtx.strokeStyle = "blue";
+    drawCtx.lineWidth = 2;
+    drawCtx.stroke();
+
+    //Create circles along the line segment.
+    const circleRadius = 1; // Adjust the radius of the circles as needed
+
+    for (let i = 0; i < drawingPath.length - 1; i++) {
+      const startPoint = drawingPath[i];
+      const endPoint = drawingPath[i + 1];
+
+      // Use Bresenham's line algorithm or similar to get every pixel along the line
+      const points = getLinePoints(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+
+      for (const point of points) {
+        const circle = Bodies.circle(point.x, point.y, circleRadius, {
+          isStatic: true,
+          render: { fillStyle: "black" },
+        });
+        World.add(engine.world, circle);
+      }
+    }
+
+    // Optionally, create the shape in Matter.js using the drawingPath
+    // For example, create a polygon body using drawingPath as vertices
+    // createPhysicsShape(drawingPath);
   }
 }
 
-// Call the draw function on every frame
-function animate() {
-  drawDividingLine();
-  requestAnimationFrame(animate);
-  draw();
-}
+function getLinePoints(x0, y0, x1, y1) {
+  const points = [];
 
-animate(); // Start the drawing loop
+  let dx = Math.abs(x1 - x0);
+  let dy = -Math.abs(y1 - y0);
+  let sx = x0 < x1 ? 1 : -1;
+  let sy = y0 < y1 ? 1 : -1;
+  let err = dx + dy;
+
+  let x = x0;
+  let y = y0;
+
+  while (x !== x1 || y !== y1) {
+    points.push({ x: x, y: y });
+
+    let e2 = 2 * err;
+
+    if (e2 >= dy) {
+      err += dy;
+      x += sx;
+    }
+    if (e2 <= dx) {
+      err += dx;
+      y += sy;
+    }
+  }
+  // Add the last point
+  points.push({ x: x1, y: y1 });
+
+  return points;
+}
 
 //#endregion DRAWING FUNCTIONS
 
