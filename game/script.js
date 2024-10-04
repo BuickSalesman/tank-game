@@ -213,6 +213,17 @@ let shells = [];
 //#endregion BODY VARIABLES
 
 //#region DRAWING VARIABLES
+
+//#region EXPLOSIONS!!!!
+const explosionFrames = [];
+for (let i = 1; i <= 30; i++) {
+  const img = new Image();
+  img.src = `assets/EXPLOSION-FRAMES/frame-${i}.png`; // Change this path to your actual explosion images
+  explosionFrames.push(img);
+}
+
+//#endregion EXPLOSIONS!!!!
+
 const dividingLine = drawCanvas.height / 2;
 let shapeCount = 0; //Counter for number of shapes drawn.
 let maxShapeCount = 10; //Maximum number of shapes.
@@ -328,22 +339,21 @@ Events.on(engine, "collisionStart", function (event) {
     const { bodyA, bodyB } = pair;
     console.log(pair);
 
+    const x = (bodyA.position.x + bodyB.position.x) / 2;
+    const y = (bodyA.position.y + bodyB.position.y) / 2;
+
     // Check if a tank collided with a shell
     if (bodiesMatch(bodyA, bodyB, "Tank", "Shell")) {
       console.log("Tank hit by shell!");
+      drawExplosion(drawCtx, x, y, 0);
       // Handle the collision between tank and shell
     }
 
     // Check if a shell collided with a reactor
     if (bodiesMatch(bodyA, bodyB, "Shell", "Reactor")) {
       console.log("Shell hit a reactor!");
+      drawExplosion(drawCtx, x, y, 0);
       // Handle the collision between shell and reactor
-    }
-
-    // Add more conditions for other body types like turrets, etc.
-    if (bodiesMatch(bodyA, bodyB, "Shell", "Turret")) {
-      console.log("Tank hit a turret!");
-      // Handle collision between tank and turret
     }
   });
 });
@@ -447,6 +457,14 @@ Events.on(mouseConstraint, "mouseleave", function (event) {
 //#region FUNCTIONS
 
 //#region DRAWING FUNCTIONS
+
+function drawExplosion(drawCtx, x, y, frame) {
+  if (frame < explosionFrames.length) {
+    drawCtx.clearRect(x - 50, y - 50, 100, 100);
+    drawCtx.drawImage(explosionFrames[frame], x - 50, y - 50, 100, 100); // Adjust size and position as needed
+    setTimeout(() => drawExplosion(drawCtx, x, y, frame + 1), 50); // Advance to the next frame every 100ms
+  }
+}
 
 //Draw dividing line on canvas.
 function drawDividingLine() {
