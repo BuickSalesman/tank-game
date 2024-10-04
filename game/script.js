@@ -1,3 +1,7 @@
+//#region VARIABLES
+
+//#region SETUP VARIABLES
+
 const {
   Bounds,
   Engine,
@@ -13,7 +17,12 @@ const {
   Collision,
   Vertices,
   decomp,
+  Vector,
 } = Matter;
+
+//Declare engine and world.
+const engine = Engine.create();
+const world = engine.world;
 
 //Game state setup.
 const GameState = Object.freeze({
@@ -22,7 +31,7 @@ const GameState = Object.freeze({
   GAME_RUNNING: "GAME_RUNNING",
   POST_GAME: "POST_GAME",
 });
-let currentGameState = GameState.GAME_RUNNING;
+let currentGameState = GameState.PRE_GAME;
 
 let actionMode = null;
 
@@ -30,34 +39,38 @@ let actionMode = null;
 const PLAYER_ONE = 1;
 const PLAYER_TWO = 2;
 
-//Declare engine and world.
-const engine = Engine.create();
-const world = engine.world;
-
 //Declare height, width, and aspect ratio for the canvas.
 const aspectRatio = 1 / 1.4142;
 const baseHeight = window.innerHeight * 0.95;
 const width = baseHeight * aspectRatio;
 const height = baseHeight;
 
-//Declare canvas and context.
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+// Get both canvases
+const drawCanvas = document.getElementById("drawCanvas"); // For drawing
+const physicsCanvas = document.getElementById("physicsCanvas"); // For Matter.js rendering
 
-//Declare gameContainer
+// Declare contexts for both canvases.
+const drawCtx = drawCanvas.getContext("2d");
+
+// Set canvas sizes (both should be the same size)
+drawCanvas.width = physicsCanvas.width = width;
+drawCanvas.height = physicsCanvas.height = height;
+
+// Setup gameContainer
 const gameContainer = document.getElementById("gameContainer");
+gameContainer.style.width = `${width}px`;
+gameContainer.style.height = `${height}px`;
 
-//Declare and create Matter.js renderer bound to the canvas.
+// Declare and create Matter.js renderer bound to the physics canvas.
 const render = Render.create({
   element: gameContainer,
-  canvas: canvas,
+  canvas: physicsCanvas, // Use physicsCanvas for Matter.js rendering
   engine: engine,
   options: {
     width: width,
     height: height,
     background: null,
-    wireframes: false,
-    // I dont really understand the wrieframes thing, but it seems important to include.
+    wireframes: false, // I dont really understand the wrieframes thing, but it seems important to include.
   },
 });
 
@@ -78,6 +91,8 @@ let mouseConstraint = MouseConstraint.create(engine, {
     },
   },
 });
+
+//#endregion SETUP VARIABLES
 
 //#region BODY VARIABLES
 
@@ -196,12 +211,25 @@ let shells = [];
 
 //#endregion BODY VARIABLES
 
+//#region DRAWING VARIABLES
+const dividingLine = drawCanvas.height / 2;
+let shapeCount = 0; //Counter for number of shapes drawn.
+let maxShapeCount = 10; //Maximum number of shapes.
+//Initial state allows drawing below dividingLine.
+let isDrawingBelow = true;
+let isDrawing = false;
+let drawingPath = [];
+let allPaths = []; // Array to store all completed paths
+let lastLineTime = 0; // To track when to add a new line
+const lineInterval = 10; // 100 milliseconds
+
+//#endregion DRAWING VARIABLES
+
 //#region MOVE AND SHOOT VARIABLES
 const powerButton = document.getElementById("powerButton");
 const powerMeterFill = document.getElementById("powerMeterFill");
 
-//To store selected tank or turret.
-let selectedUnit = null;
+let selectedUnit = null; //To store selected tank or turret.
 const maxTravelDistance = height * 0.04;
 const forceScalingFactor = maxTravelDistance / Math.pow(100, 1.5);
 let powerLevel = 0;
@@ -210,16 +238,18 @@ let isMouseDown = false;
 let startingMousePosition = null;
 let endingMousePosition = null;
 //#endregion MOVE AND SHOOT VARIABLES
-
 //#endregion VARIABLES
+
+//#region MATTER AND SOCKET SETUP
 
 //Disable gravity.
 engine.world.gravity.y = 0;
 engine.world.gravity.x = 0;
 
-//Set the canvas height and width.
-canvas.width = width;
-canvas.height = height;
+//MAY NEED TO MESS WITH THIS
+// //Set the canvas height and width.
+// canvas.width = width;
+// canvas.height = height;
 
 //Setup gameContainer.
 gameContainer.style.width = `${width}px`;
@@ -233,7 +263,8 @@ Runner.run(runner, engine);
 
 //Add the ability for mouse input into the physics world.
 World.add(world, mouseConstraint);
-//#endregion MATTER SETUP
+
+//#endregion MATTER AND SOCKET SETUP
 
 //#region EVENT HANDLERS
 
@@ -282,7 +313,6 @@ document.getElementById("shootButton").addEventListener("click", function () {
   console.log(actionMode);
 });
 //#endregion BUTTON EVENT HANDLERS
-
 //#region COLLISION HANDLERS
 Events.on(engine, "collisionStart", function (event) {
   function bodiesMatch(bodyA, bodyB, label1, label2) {
@@ -344,6 +374,7 @@ Events.on(mouseConstraint, "mousedown", function (event) {
   }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
+    startDrawing(event);
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -359,7 +390,7 @@ Events.on(mouseConstraint, "mousemove", function (event) {
     //teach stuff
   }
   if (currentGameState === GameState.PRE_GAME) {
-    //draw stuff
+    drawOnDrawCanvas(event);
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -374,7 +405,7 @@ Events.on(mouseConstraint, "mouseup", function (event) {
     //teach stuff
   }
   if (currentGameState === GameState.PRE_GAME) {
-    //draw stuff
+    endDrawing(event);
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -391,6 +422,7 @@ Events.on(mouseConstraint, "mouseleave", function (event) {
   }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
+    endDrawing(event);
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -402,8 +434,188 @@ Events.on(mouseConstraint, "mouseleave", function (event) {
 
 //#endregion MOUSE EVENTS
 
-//#region MOVE AND SHOOT FUNCTIONS
+//#region FUNCTIONS
 
+//#region DRAWING FUNCTIONS
+
+//Draw dividing line on canvas.
+function drawDividingLine() {
+  drawCtx.beginPath();
+  drawCtx.moveTo(0, dividingLine);
+  drawCtx.lineTo(drawCanvas.width, dividingLine);
+  drawCtx.strokeStyle = "black";
+  drawCtx.lineWidth = 2;
+  drawCtx.stroke();
+}
+
+function startDrawing(event) {
+  if (shapeCount >= maxShapeCount) return;
+
+  isDrawing = true;
+  drawingPath = [];
+  const { mouse } = event;
+  drawingPath.push({ x: mouse.position.x, y: mouse.position.y });
+  lastLineTime = Date.now(); // Initialize time for the first line
+}
+
+function drawOnDrawCanvas(event) {
+  if (isDrawing) {
+    const currentTime = Date.now();
+    if (currentTime - lastLineTime >= lineInterval) {
+      drawingPath.push({ x: mouse.position.x, y: mouse.position.y });
+      lastLineTime = currentTime; // Update the time for the next line
+    }
+  }
+}
+
+function endDrawing(event) {
+  isDrawing = false;
+
+  if (drawingPath.length > 1) {
+    // Close the shape by connecting the last point to the first point
+    drawingPath.push(drawingPath[0]);
+    allPaths.push([...drawingPath]); // Add the completed path to allPaths
+    drawingPath.push(drawingPath[0]);
+    createMatterBodyFromDrawing(drawingPath); // Create Matter.js body from the drawn path
+    drawingPath = []; // Reset the current drawing path for the next shape
+  }
+}
+
+// Drawing on the drawCanvas (separate from the Matter.js canvas)
+function draw() {
+  if (isDrawing) {
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); // Clear the drawing canvas before drawing
+
+    drawDividingLine();
+
+    // Draw all completed shapes
+    allPaths.forEach((path) => {
+      drawCtx.beginPath();
+      drawCtx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        drawCtx.lineTo(path[i].x, path[i].y);
+      }
+      drawCtx.strokeStyle = "blue"; // Set the stroke color for the drawing
+      drawCtx.lineWidth = 2;
+      drawCtx.stroke();
+    });
+
+    // If currently drawing, draw the current path
+    if (isDrawing && drawingPath.length > 0) {
+      drawCtx.beginPath();
+      drawCtx.moveTo(drawingPath[0].x, drawingPath[0].y);
+      for (let i = 1; i < drawingPath.length; i++) {
+        drawCtx.lineTo(drawingPath[i].x, drawingPath[i].y);
+      }
+      drawCtx.strokeStyle = "blue"; // Set the stroke color for the drawing
+      drawCtx.lineWidth = 2;
+      drawCtx.stroke();
+    }
+  }
+}
+// Function to get the centroid of a Matter.js body, accounting for all parts
+function getBodyCentroid(body) {
+  let allVertices = [];
+
+  // Collect all vertices from all parts (excluding the parent body if necessary)
+  if (body.parts.length > 1) {
+    body.parts.forEach((part) => {
+      // Skip the first part, which is the parent body
+      if (part === body) return;
+      allVertices = allVertices.concat(part.vertices);
+    });
+  } else {
+    allVertices = body.vertices;
+  }
+
+  // Calculate the centroid of all vertices
+  const centroid = Vertices.centre(allVertices);
+  return centroid;
+}
+
+// Function to convert the drawn shape into a js body
+function createMatterBodyFromDrawing(path) {
+  // Convert the path into an array of vertices using absolute screen coordinates
+  const vertices = path.map((point) => ({
+    x: point.x,
+    y: point.y,
+  }));
+
+  // Use js to calculate the centroid of the drawing vertices
+  const drawingCentroid = Vertices.centre(vertices);
+  console.log("Drawing centroid (js):", drawingCentroid);
+
+  // Adjust vertices to be relative to the drawing centroid
+  const relativeVertices = vertices.map((vertex) => ({
+    x: vertex.x - drawingCentroid.x,
+    y: vertex.y - drawingCentroid.y,
+  }));
+
+  // Create the body at the drawing centroid with the adjusted vertices
+  const body = Bodies.fromVertices(
+    drawingCentroid.x,
+    drawingCentroid.y,
+    [relativeVertices],
+    {
+      ignoreBoundaryLimit: true,
+      isStatic: true,
+      render: {
+        fillStyle: "rgba(0, 0, 0, 0.5)",
+        strokeStyle: "black",
+        lineWidth: 2,
+      },
+      // Chamfer can be re-enabled if needed
+      // chamfer: {
+      //   radius: 20,
+      // },
+    },
+    true // Automatically handle decomposition
+  );
+
+  if (body) {
+    // After creating the body, calculate its actual centroid
+    const bodyCentroid = getBodyCentroid(body);
+    console.log("Initial body centroid:", bodyCentroid);
+
+    // Compute the offset between the drawing centroid and the body's actual centroid
+    const offset = {
+      x: drawingCentroid.x - bodyCentroid.x,
+      y: drawingCentroid.y - bodyCentroid.y,
+    };
+
+    // Translate the body by this offset to align the centroids
+    Body.translate(body, offset);
+
+    // Add the new body to the js world
+    World.add(world, body);
+
+    // Verify the centroid after adjustment
+    const adjustedCentroid = getBodyCentroid(body);
+    console.log("Adjusted body centroid:", adjustedCentroid);
+
+    // Clear the draw canvas after the body is created
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+
+    shapeCount++;
+
+    if (shapeCount === maxShapeCount) {
+      currentGameState = GameState.GAME_RUNNING;
+    }
+  }
+}
+
+// Call the draw function on every frame
+function animate() {
+  drawDividingLine();
+  requestAnimationFrame(animate);
+  draw();
+}
+
+animate(); // Start the drawing loop
+
+//#endregion DRAWING FUNCTIONS
+
+//#region MOVE AND SHOOT FUNCTIONS
 //To increase power meter when called.
 //INCREASE POWER CALLED IN BEFOREUPDATE
 function increasePower() {
@@ -523,7 +735,15 @@ function releaseAndApplyForce(event) {
     resetPower();
   }
 }
-
 //#endregion MOVE AND SHOOT FUNCTIONS
 
 //#endregion FUNCTIONS
+
+//#region BUG LOG
+//Bug where if you don't remove your mouse from the tank when shooting, the shell does not disappear
+//Bug where the blue drawing line does not disappear after the last shape is drawn
+//Bug where the rendered shape is offset just a bit from where it is drawn
+//Bug where shapes should not be allowed to overlap
+//Poly-decomp lol
+
+//#endregion BUG LOG
