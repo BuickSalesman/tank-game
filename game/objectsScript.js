@@ -120,7 +120,7 @@ const walls = [
 
 //#region TANK VARIABLES
 
-let tankSize = width * 0.025; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
+let tankSize = width * 0.02; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
 
 let tankHitPoints = 2;
 
@@ -202,7 +202,8 @@ const powerMeterFill = document.getElementById("powerMeterFill");
 
 //To store selected tank or turret.
 let selectedUnit = null;
-
+const maxTravelDistance = height * 0.04;
+const forceScalingFactor = maxTravelDistance / Math.pow(100, 1.5);
 let powerLevel = 0;
 const maxPowerLevel = 100;
 let isMouseDown = false;
@@ -474,14 +475,16 @@ function releaseAndApplyForce(event) {
     if (powerLevel > 0) {
       //Non-linear scaling for a cleaner repesentation of power.
       const scaledPowerLevel = Math.pow(powerLevel, 1.5);
-      const forceMagnitude = scaledPowerLevel * 0.0158;
+      const forceMagnitude = scaledPowerLevel * forceScalingFactor * 0.1;
 
       if (actionMode === "move") {
+        console.log(forceMagnitude);
         Body.applyForce(selectedUnit, selectedUnit.position, {
           x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
           y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
         });
       } else if (actionMode === "shoot") {
+        console.log(forceMagnitude);
         const shellSize = 5; // Adjust as needed
 
         //Position the shell at the front of the tank.
@@ -491,8 +494,8 @@ function releaseAndApplyForce(event) {
         const shellY = selectedUnit.position.y - normalizedVector.y * shellOffset;
 
         const initialVelocity = {
-          x: -normalizedVector.x * forceMagnitude * 5, //delete the quintuple multipler later this is just for fun
-          y: -normalizedVector.y * forceMagnitude * 5, //delete the quintuple multipler later this is just for fun
+          x: -normalizedVector.x * forceMagnitude * 3, //delete the quintuple multipler later this is just for fun
+          y: -normalizedVector.y * forceMagnitude * 3, //delete the quintuple multipler later this is just for fun
         };
 
         let playerId;
@@ -512,7 +515,6 @@ function releaseAndApplyForce(event) {
 
         //Add shell to the world.
         World.add(world, shell);
-
         console.log(shell.playerId);
       }
     }
