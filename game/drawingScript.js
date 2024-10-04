@@ -108,14 +108,30 @@ Events.on(engine, "afterUpdate", function () {
 //#endregion AFTERUPDATE HANDLER
 
 Events.on(mouseConstraint, "mousedown", function (event) {
+  startDrawing(event);
+});
+
+Events.on(mouseConstraint, "mousemove", function (event) {
+  drawOnDrawCanvas(event);
+});
+
+Events.on(mouseConstraint, "mouseup", function (event) {
+  endDrawing(event);
+});
+
+Events.on(mouseConstraint, "mouseleave", function (event) {
+  isDrawing = false;
+});
+
+function startDrawing(event) {
   isDrawing = true;
   drawingPath = [];
   const { mouse } = event;
   drawingPath.push({ x: mouse.position.x, y: mouse.position.y });
   lastLineTime = Date.now(); // Initialize time for the first line
-});
+}
 
-Events.on(mouseConstraint, "mousemove", function (event) {
+function drawOnDrawCanvas(event) {
   if (isDrawing) {
     const currentTime = Date.now();
     if (currentTime - lastLineTime >= lineInterval) {
@@ -123,9 +139,9 @@ Events.on(mouseConstraint, "mousemove", function (event) {
       lastLineTime = currentTime; // Update the time for the next line
     }
   }
-});
+}
 
-Events.on(mouseConstraint, "mouseup", function (event) {
+function endDrawing(event) {
   isDrawing = false;
 
   if (drawingPath.length > 1) {
@@ -135,11 +151,7 @@ Events.on(mouseConstraint, "mouseup", function (event) {
     createMatterBodyFromDrawing(drawingPath); // Create Matter.js body from the drawn path
     drawingPath = []; // Reset the current drawing path for the next shape
   }
-});
-
-Events.on(mouseConstraint, "mouseleave", function (event) {
-  isDrawing = false;
-});
+}
 
 // Drawing on the drawCanvas (separate from the Matter.js canvas)
 function draw() {

@@ -1,0 +1,90 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  flex-direction: column;
+}
+
+#bodyContainer {
+  background-image: url("assets/desk.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+#gameAndPowerContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#gameContainer {
+  position: relative;
+  --aspect-ratio: 0.7071; /* 1 / 1.4142 - the ratio of a standard piece of A4 lined notebook paper */
+  height: 95vh;
+  width: calc(var(--aspect-ratio) * 95vh); /* Width is now flipped to be aligned with the A4 paper ratio */
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid #000;
+  margin: 20px;
+  background-image: url("assets/paper.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+/* This makes both canvases stack on top of each other */
+#drawCanvas,
+#physicsCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: inline-block;
+  border: 1px solid #000;
+  background-color: transparent; /* Ensure the background is transparent */
+}
+
+#powerMeterContainer {
+  display: flex;
+  align-items: flex-end;
+  width: 50px;
+  height: 60vh;
+  border: 2px solid #000;
+  margin-left: 20px;
+  position: relative;
+}
+
+#powerMeterFill {
+  width: 100%;
+  background-color: red;
+  height: 0%;
+  /* smooth fill */
+}
+
+.button-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.button {
+  padding: 10px 20px;
+  background-color: orange;
+  color: black;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: #cf8b0e;
+}
