@@ -41,7 +41,7 @@ const PLAYER_TWO = 2;
 
 //Declare height, width, and aspect ratio for the canvas.
 const aspectRatio = 1 / 1.4142;
-const baseHeight = window.innerHeight * 0.95;
+const baseHeight = Math.min(window.innerHeight * 0.95);
 const width = baseHeight * aspectRatio;
 const height = baseHeight;
 
@@ -90,6 +90,9 @@ let mouseConstraint = MouseConstraint.create(engine, {
     render: {
       visible: false,
     },
+  },
+  collisionFilter: {
+    mask: 0xffffffff,
   },
 });
 
@@ -216,9 +219,9 @@ let shells = [];
 
 //#region EXPLOSIONS!!!!
 const explosionFrames = [];
-for (let i = 1; i <= 30; i++) {
+for (let i = 1; i <= 25; i++) {
   const img = new Image();
-  img.src = `assets/EXPLOSION-FRAMES/frame-${i}.png`; // Change this path to your actual explosion images
+  img.src = `assets/EXPLOSION-FRAMES/explosion4/${i}.png`; // Change this path to your actual explosion images
   explosionFrames.push(img);
 }
 
@@ -436,16 +439,22 @@ Events.on(mouseConstraint, "mouseup", function (event) {
   }
 });
 
-//MOUSELEAVE CURRENTLY NOT WORKING - PROBABLY HAS TO BE TIED TO THE CANVAS BOUNDARY OR SOMETHING
+//MOUSELEAVE CURRENTLY NOT WORKING - HAVE TO MAKE EVENT LISTENER OUTSIDE OF MATTER FOR THIS TO WORK
 Events.on(mouseConstraint, "mouseleave", function (event) {
   if (currentGameState === GameState.TUTORIAL) {
     //teach stuff
   }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
+    endDrawing(event);
+    shapeCount++;
+    if (shapeCount === maxShapeCount) {
+      currentGameState = GameState.GAME_RUNNING;
+    }
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
+    releaseAndApplyForce(event);
   }
   if (currentGameState === GameState.POST_GAME) {
     //restart stuff
@@ -462,7 +471,7 @@ function drawExplosion(drawCtx, x, y, frame) {
   if (frame < explosionFrames.length) {
     drawCtx.clearRect(x - 50, y - 50, 100, 100);
     drawCtx.drawImage(explosionFrames[frame], x - 50, y - 50, 100, 100); // Adjust size and position as needed
-    setTimeout(() => drawExplosion(drawCtx, x, y, frame + 1), 50); // Advance to the next frame every 100ms
+    setTimeout(() => drawExplosion(drawCtx, x, y, frame + 1), 45); // Advance to the next frame every 100ms
   }
 }
 
@@ -554,10 +563,6 @@ function endDrawing(event) {
         World.add(engine.world, circle);
       }
     }
-
-    // Optionally, create the shape in Matter.js using the drawingPath
-    // For example, create a polygon body using drawingPath as vertices
-    // createPhysicsShape(drawingPath);
   }
 }
 
@@ -596,6 +601,7 @@ function getLinePoints(x0, y0, x1, y1) {
 //#endregion DRAWING FUNCTIONS
 
 //#region MOVE AND SHOOT FUNCTIONS
+
 //To increase power meter when called.
 //INCREASE POWER CALLED IN BEFOREUPDATE
 function increasePower() {
