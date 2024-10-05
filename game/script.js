@@ -231,6 +231,12 @@ const dividingLine = drawCanvas.height / 2;
 let shapeCount = 0; //Counter for number of shapes drawn.
 let maxShapeCount = 10; //Maximum number of shapes.
 //Initial state allows drawing below dividingLine.
+
+//#region DRAWING MARGIN VARIABLES
+const drawingMarginX = tankSize + width * 0.02;
+const drawingMarginY = tankSize + height * 0.02;
+//#endregion DRAWING MARGIN VARIABLES
+
 let isDrawingBelow = true;
 let isDrawing = false;
 let drawingPath = [];
@@ -486,18 +492,31 @@ function drawDividingLine() {
 }
 
 function startDrawing() {
+  const mousePosition = mouseConstraint.mouse.position;
+
   if (shapeCount >= maxShapeCount) return;
+
+  if (
+    mousePosition.x < drawingMarginX ||
+    mousePosition.x > width - drawingMarginX ||
+    mousePosition.y < drawingMarginY ||
+    mousePosition.y > height - drawingMarginY
+  ) {
+    return; // Don't start drawing if outside drawable area
+  }
 
   isDrawing = true;
   drawingPath = [];
-  const mousePosition = mouseConstraint.mouse.position;
   drawingPath.push({ x: mousePosition.x, y: mousePosition.y });
 }
 
 function draw() {
+  const mousePosition = mouseConstraint.mouse.position;
+
   if (!isDrawing) return;
 
-  const mousePosition = mouseConstraint.mouse.position;
+  mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
+  mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
 
   drawingPath.push({ x: mousePosition.x, y: mousePosition.y });
 
@@ -569,31 +588,31 @@ function endDrawing(event) {
 function getLinePoints(x0, y0, x1, y1) {
   const points = [];
 
-  let dx = Math.abs(x1 - x0);
-  let dy = -Math.abs(y1 - y0);
-  let sx = x0 < x1 ? 1 : -1;
-  let sy = y0 < y1 ? 1 : -1;
-  let err = dx + dy;
+  x0 = Math.round(x0);
+  y0 = Math.round(y0);
+  x1 = Math.round(x1);
+  y1 = Math.round(y1);
+
+  let dx = x1 - x0;
+  let dy = y1 - y0;
+
+  let steps = Math.max(Math.abs(dx), Math.abs(dy));
+  if (steps === 0) {
+    points.push({ x: x0, y: y0 });
+    return points;
+  }
+
+  let xStep = dx / steps;
+  let yStep = dy / steps;
 
   let x = x0;
   let y = y0;
 
-  while (x !== x1 || y !== y1) {
-    points.push({ x: x, y: y });
-
-    let e2 = 2 * err;
-
-    if (e2 >= dy) {
-      err += dy;
-      x += sx;
-    }
-    if (e2 <= dx) {
-      err += dx;
-      y += sy;
-    }
+  for (let i = 0; i <= steps; i++) {
+    points.push({ x: Math.round(x), y: Math.round(y) });
+    x += xStep;
+    y += yStep;
   }
-  // Add the last point
-  points.push({ x: x1, y: y1 });
 
   return points;
 }
