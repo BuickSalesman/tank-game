@@ -45,7 +45,7 @@ const baseHeight = Math.min(window.innerHeight * 0.95);
 const width = baseHeight * aspectRatio;
 const height = baseHeight;
 
-// Get both canvases
+//Declare both canvases
 const drawCanvas = document.getElementById("drawCanvas"); // For drawing
 const physicsCanvas = document.getElementById("physicsCanvas"); // For Matter.js rendering
 
@@ -71,7 +71,7 @@ const render = Render.create({
     width: width,
     height: height,
     background: null,
-    wireframes: false, // I dont really understand the wrieframes thing, but it seems important to include.
+    wireframes: false, // Wireframes disabled for visual rendering
   },
 });
 
@@ -81,7 +81,7 @@ const runner = Runner.create();
 //Declare a mouse input object.
 let mouse = Mouse.create(render.canvas);
 
-//Declare and create the ability for abojects to be able to interact with the mouse input object.
+//Declare and create the ability for objects to be able to interact with the mouse input object.
 let mouseConstraint = MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
@@ -139,7 +139,7 @@ const walls = [
 
 //#region TANK VARIABLES
 
-let tankSize = width * 0.02; //rename variable to something more clear, like "smallest dimension" Allows tank to scale with the canvas width/height.
+let tankSize = width * 0.02; // Allows tank to scale with the canvas width/height.
 
 let tankHitPoints = 2;
 
@@ -224,13 +224,11 @@ for (let i = 1; i <= 25; i++) {
   img.src = `assets/EXPLOSION-FRAMES/explosion4/${i}.png`; // Change this path to your actual explosion images
   explosionFrames.push(img);
 }
-
 //#endregion EXPLOSIONS!!!!
 
 const dividingLine = drawCanvas.height / 2;
 let shapeCount = 0; //Counter for number of shapes drawn.
 let maxShapeCount = 10; //Maximum number of shapes.
-//Initial state allows drawing below dividingLine.
 
 //#region DRAWING MARGIN VARIABLES
 const drawingMarginX = tankSize + width * 0.02;
@@ -269,11 +267,6 @@ let endingMousePosition = null;
 //Disable gravity.
 engine.world.gravity.y = 0;
 engine.world.gravity.x = 0;
-
-//MAY NEED TO MESS WITH THIS
-// //Set the canvas height and width.
-// canvas.width = width;
-// canvas.height = height;
 
 //Setup gameContainer.
 gameContainer.style.width = `${width}px`;
@@ -340,6 +333,7 @@ document.getElementById("shootButton").addEventListener("click", function () {
   console.log(actionMode);
 });
 //#endregion BUTTON EVENT HANDLERS
+
 //#region COLLISION HANDLERS
 Events.on(engine, "collisionStart", function (event) {
   function bodiesMatch(bodyA, bodyB, label1, label2) {
@@ -404,6 +398,11 @@ Events.on(engine, "collisionStart", function (event) {
         console.log("Reactor destroyed!");
         // Optionally, trigger an explosion or other visual effect
         drawExplosion(drawCtx, reactor.position.x, reactor.position.y, 0);
+
+        setTimeout(() => {
+          alert("You win or lose!");
+          location.reload();
+        }, 1000);
       }
     }
   });
@@ -474,32 +473,6 @@ Events.on(mouseConstraint, "mouseup", function (event) {
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
     endDrawing(event);
-    shapeCount++;
-    if (shapeCount === maxShapeCount) {
-      currentGameState = GameState.GAME_RUNNING;
-    }
-  }
-  if (currentGameState === GameState.GAME_RUNNING) {
-    //shoot stuff
-    releaseAndApplyForce(event);
-  }
-  if (currentGameState === GameState.POST_GAME) {
-    //restart stuff
-  }
-});
-
-//MOUSELEAVE CURRENTLY NOT WORKING - HAVE TO MAKE EVENT LISTENER OUTSIDE OF MATTER FOR THIS TO WORK
-Events.on(mouseConstraint, "mouseleave", function (event) {
-  if (currentGameState === GameState.TUTORIAL) {
-    //teach stuff
-  }
-  if (currentGameState === GameState.PRE_GAME) {
-    //draw stuff
-    endDrawing(event);
-    shapeCount++;
-    if (shapeCount === maxShapeCount) {
-      currentGameState = GameState.GAME_RUNNING;
-    }
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
@@ -520,7 +493,7 @@ function drawExplosion(drawCtx, x, y, frame) {
   if (frame < explosionFrames.length) {
     drawCtx.clearRect(x - 50, y - 50, 100, 100);
     drawCtx.drawImage(explosionFrames[frame], x - 50, y - 50, 100, 100); // Adjust size and position as needed
-    setTimeout(() => drawExplosion(drawCtx, x, y, frame + 1), 45); // Advance to the next frame every 100ms
+    setTimeout(() => drawExplosion(drawCtx, x, y, frame + 1), 45); // Advance to the next frame every 45ms
   }
 }
 
@@ -594,6 +567,9 @@ function draw() {
   drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
   drawDividingLine();
 
+  // Re-draw existing shapes
+  redrawAllShapes();
+
   // Draw the current path
   if (drawingPath.length > 0) {
     drawCtx.beginPath();
@@ -620,7 +596,6 @@ function endDrawing() {
   isDrawing = false;
 
   if (drawingPath.length > 1) {
-    // Snapping logic remains the same as before
     const firstPoint = drawingPath[0];
     const lastPoint = drawingPath[drawingPath.length - 1];
     const distance = Math.hypot(lastPoint.x - firstPoint.x, lastPoint.y - firstPoint.y);
@@ -632,26 +607,69 @@ function endDrawing() {
       drawingPath.push({ x: firstPoint.x, y: firstPoint.y });
     }
 
-    // Clear the canvas and redraw the final shape
-    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-    drawDividingLine(); // Re-draw the dividing line if necessary
-
-    drawCtx.beginPath();
-    drawCtx.moveTo(drawingPath[0].x, drawingPath[0].y);
-    for (let i = 1; i < drawingPath.length; i++) {
-      drawCtx.lineTo(drawingPath[i].x, drawingPath[i].y);
+    // Before adding the shape, check for overlaps with existing shapes
+    let overlaps = false;
+    for (let i = 0; i < allPaths.length; i++) {
+      if (polygonsOverlap(drawingPath, allPaths[i])) {
+        overlaps = true;
+        break;
+      }
     }
-    drawCtx.closePath();
-    drawCtx.strokeStyle = "blue";
-    drawCtx.lineWidth = 2;
-    drawCtx.stroke();
 
-    //Create circles along the line segment.
-    const circleRadius = 1; // Adjust the radius of the circles as needed
+    if (overlaps) {
+      alert("Shapes cannot overlap! Try again!");
+      // Do not increment shapeCount
+      // Clear the drawing
+      drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      drawDividingLine(); // Re-draw the dividing line
+      // Re-draw existing shapes
+      redrawAllShapes();
+    } else {
+      // Shape is valid, add it to allPaths
+      allPaths.push(drawingPath);
 
-    for (let i = 0; i < drawingPath.length - 1; i++) {
-      const startPoint = drawingPath[i];
-      const endPoint = drawingPath[i + 1];
+      // Increment shape count
+      shapeCount++;
+      if (shapeCount === maxShapeCount) {
+        currentGameState = GameState.GAME_RUNNING;
+        // After max shapes, create Matter.js bodies from shapes
+        createBodiesFromShapes();
+      }
+      // Clear the drawing and re-draw all shapes
+      drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      drawDividingLine(); // Re-draw the dividing line
+      redrawAllShapes();
+    }
+  }
+}
+
+function redrawAllShapes() {
+  for (let i = 0; i < allPaths.length; i++) {
+    const path = allPaths[i];
+    if (path.length > 0) {
+      drawCtx.beginPath();
+      drawCtx.moveTo(path[0].x, path[0].y);
+      for (let j = 1; j < path.length; j++) {
+        drawCtx.lineTo(path[j].x, path[j].y);
+      }
+      drawCtx.closePath();
+      drawCtx.strokeStyle = "blue";
+      drawCtx.lineWidth = 2;
+      drawCtx.stroke();
+    }
+  }
+}
+
+function createBodiesFromShapes() {
+  for (let i = 0; i < allPaths.length; i++) {
+    const path = allPaths[i];
+
+    // Create circles along the line segments of the path
+    const circleRadius = 1; // Adjust the radius as needed
+
+    for (let j = 0; j < path.length - 1; j++) {
+      const startPoint = path[j];
+      const endPoint = path[j + 1];
 
       // Use Bresenham's line algorithm or similar to get every pixel along the line
       const points = getLinePoints(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
@@ -697,6 +715,69 @@ function getLinePoints(x0, y0, x1, y1) {
   }
 
   return points;
+}
+
+function polygonsOverlap(polygonA, polygonB) {
+  // Check if any edges of polygonA intersect with any edges of polygonB
+  for (let i = 0; i < polygonA.length; i++) {
+    const a1 = polygonA[i];
+    const a2 = polygonA[(i + 1) % polygonA.length];
+
+    for (let j = 0; j < polygonB.length; j++) {
+      const b1 = polygonB[j];
+      const b2 = polygonB[(j + 1) % polygonB.length];
+
+      if (doLineSegmentsIntersect(a1, a2, b1, b2)) {
+        return true; // Polygons overlap
+      }
+    }
+  }
+
+  // Additionally, check if one polygon is completely inside another
+  if (isPointInPolygon(polygonA[0], polygonB) || isPointInPolygon(polygonB[0], polygonA)) {
+    return true;
+  }
+
+  return false; // Polygons do not overlap
+}
+
+function doLineSegmentsIntersect(p0, p1, p2, p3) {
+  const s1_x = p1.x - p0.x;
+  const s1_y = p1.y - p0.y;
+  const s2_x = p3.x - p2.x;
+  const s2_y = p3.y - p2.y;
+
+  const denominator = -s2_x * s1_y + s1_x * s2_y;
+  if (denominator === 0) return false; // Lines are parallel
+
+  const s = (-s1_y * (p0.x - p2.x) + s1_x * (p0.y - p2.y)) / denominator;
+  const t = (s2_x * (p0.y - p2.y) - s2_y * (p0.x - p2.x)) / denominator;
+
+  if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+    return true; // Collision detected
+  }
+
+  return false; // No collision
+}
+
+function isPointInPolygon(point, polygon) {
+  let collision = false;
+
+  let next = 0;
+  for (let current = 0; current < polygon.length; current++) {
+    next = (current + 1) % polygon.length;
+
+    const vc = polygon[current];
+    const vn = polygon[next];
+
+    if (
+      vc.y > point.y !== vn.y > point.y &&
+      point.x < ((vn.x - vc.x) * (point.y - vc.y)) / (vn.y - vc.y + 0.00001) + vc.x
+    ) {
+      collision = !collision;
+    }
+  }
+  return collision;
 }
 
 //#endregion DRAWING FUNCTIONS
@@ -772,7 +853,7 @@ function releaseAndApplyForce(event) {
 
     //Apply force based on the vector, if powerLevel is greater than 0.
     if (powerLevel > 0) {
-      //Non-linear scaling for a cleaner repesentation of power.
+      //Non-linear scaling for a cleaner representation of power.
       const scaledPowerLevel = Math.pow(powerLevel, 1.5);
       const forceMagnitude = scaledPowerLevel * forceScalingFactor * 0.1;
 
@@ -793,8 +874,8 @@ function releaseAndApplyForce(event) {
         const shellY = selectedUnit.position.y - normalizedVector.y * shellOffset;
 
         const initialVelocity = {
-          x: -normalizedVector.x * forceMagnitude * 3, //delete the quintuple multipler later this is just for fun
-          y: -normalizedVector.y * forceMagnitude * 3, //delete the quintuple multipler later this is just for fun
+          x: -normalizedVector.x * forceMagnitude * 3, // Adjust multiplier as needed
+          y: -normalizedVector.y * forceMagnitude * 3, // Adjust multiplier as needed
         };
 
         let playerId;
