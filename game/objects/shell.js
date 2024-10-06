@@ -14,6 +14,11 @@ const ShellModule = {
       render: {
         fillStyle: "black",
       },
+      collisionFilter: {
+        group: 1,
+        category: 0,
+        mask: 0,
+      },
     });
 
     // Apply initial velocity to the shell

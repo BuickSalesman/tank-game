@@ -400,7 +400,7 @@ Events.on(engine, "collisionStart", function (event) {
         drawExplosion(drawCtx, reactor.position.x, reactor.position.y, 0);
 
         setTimeout(() => {
-          alert("You win or lose!");
+          alert("You win or lose! Dismiss this to replay.");
           location.reload();
         }, 1000);
       }
@@ -617,7 +617,7 @@ function endDrawing() {
     }
 
     if (overlaps) {
-      alert("Shapes cannot overlap! Try again!");
+      alert("Shapes cannot overlap, ya dingus! Try again homie.");
       // Do not increment shapeCount
       // Clear the drawing
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
@@ -678,6 +678,11 @@ function createBodiesFromShapes() {
         const circle = Bodies.circle(point.x, point.y, circleRadius, {
           isStatic: true,
           render: { fillStyle: "black" },
+          collisionFilter: {
+            group: 1,
+            category: 0,
+            mask: 0,
+          },
         });
         World.add(engine.world, circle);
       }
@@ -742,16 +747,16 @@ function polygonsOverlap(polygonA, polygonB) {
 }
 
 function doLineSegmentsIntersect(p0, p1, p2, p3) {
-  const s1_x = p1.x - p0.x;
-  const s1_y = p1.y - p0.y;
-  const s2_x = p3.x - p2.x;
-  const s2_y = p3.y - p2.y;
+  const s1X = p1.x - p0.x;
+  const s1Y = p1.y - p0.y;
+  const s2X = p3.x - p2.x;
+  const s2Y = p3.y - p2.y;
 
-  const denominator = -s2_x * s1_y + s1_x * s2_y;
+  const denominator = -s2X * s1Y + s1X * s2Y;
   if (denominator === 0) return false; // Lines are parallel
 
-  const s = (-s1_y * (p0.x - p2.x) + s1_x * (p0.y - p2.y)) / denominator;
-  const t = (s2_x * (p0.y - p2.y) - s2_y * (p0.x - p2.x)) / denominator;
+  const s = (-s1Y * (p0.x - p2.x) + s1X * (p0.y - p2.y)) / denominator;
+  const t = (s2X * (p0.y - p2.y) - s2Y * (p0.x - p2.x)) / denominator;
 
   if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
     return true; // Collision detected
@@ -908,10 +913,6 @@ function releaseAndApplyForce(event) {
 //#endregion FUNCTIONS
 
 //#region BUG LOG
-//Bug where if you don't remove your mouse from the tank when shooting, the shell does not disappear
-//Bug where the blue drawing line does not disappear after the last shape is drawn
-//Bug where the rendered shape is offset just a bit from where it is drawn
-//Bug where shapes should not be allowed to overlap
-//Poly-decomp lol
-
+//Sometimes when shapes are snapped shut, it throws the shapes cannot overlap error.
+//Tanks should not be able to shoot themselves
 //#endregion BUG LOG

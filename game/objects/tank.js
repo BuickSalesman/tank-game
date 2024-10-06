@@ -17,6 +17,11 @@ const TankModule = {
         strokeStyle: "black",
         lineWidth: 2,
       },
+      collisionFilter: {
+        group: 1,
+        category: 0,
+        mask: 0,
+      },
     });
 
     tank.hitPoints = 2;
