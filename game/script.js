@@ -563,9 +563,9 @@ function draw() {
     }
     // Optionally change color based on ink usage
     const inkUsageRatio = totalInkUsed / maxInkPerShape;
-    if (inkUsageRatio > 0.33) {
+    if (inkUsageRatio > 0.66) {
       drawCtx.strokeStyle = "red";
-    } else if (inkUsageRatio > 0.66) {
+    } else if (inkUsageRatio > 0.33) {
       drawCtx.strokeStyle = "orange";
     } else {
       drawCtx.strokeStyle = "blue";
