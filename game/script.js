@@ -237,6 +237,9 @@ const drawingMarginX = tankSize + width * 0.02;
 const drawingMarginY = tankSize + height * 0.02;
 //#endregion DRAWING MARGIN VARIABLES
 
+let totalInkUsed = 0;
+const maxInkPerShape = 750;
+
 let isDrawingBelow = true;
 let isDrawing = false;
 let drawingPath = [];
@@ -505,6 +508,7 @@ function startDrawing() {
     return; // Don't start drawing if outside drawable area
   }
 
+  totalInkUsed = 0;
   isDrawing = true;
   drawingPath = [];
   drawingPath.push({ x: mousePosition.x, y: mousePosition.y });
@@ -518,22 +522,60 @@ function draw() {
   mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
   mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
 
-  drawingPath.push({ x: mousePosition.x, y: mousePosition.y });
+  // Calculate the length of the new segment
+  const lastPoint = drawingPath[drawingPath.length - 1];
+  const dx = mousePosition.x - lastPoint.x;
+  const dy = mousePosition.y - lastPoint.y;
+  const segmentLength = Math.sqrt(dx * dx + dy * dy);
 
-  // Begin drawing the path
+  // Check if adding this segment would exceed max ink
+  if (totalInkUsed + segmentLength > maxInkPerShape) {
+    // Limit the segment length to the remaining ink
+    const remainingInk = maxInkPerShape - totalInkUsed;
+    const ratio = remainingInk / segmentLength;
+    if (ratio > 0) {
+      // Add the last possible point within the ink limit
+      const limitedX = lastPoint.x + dx * ratio;
+      const limitedY = lastPoint.y + dy * ratio;
+      drawingPath.push({ x: limitedX, y: limitedY });
+      totalInkUsed = maxInkPerShape;
+    }
+    // Stop drawing
+    isDrawing = false;
+    endDrawing();
+    return;
+  } else {
+    // Update totalInkUsed and continue drawing
+    totalInkUsed += segmentLength;
+    drawingPath.push({ x: mousePosition.x, y: mousePosition.y });
+  }
+
+  // Clear the canvas and redraw
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  drawDividingLine();
+
+  // Draw the current path
   if (drawingPath.length > 0) {
     drawCtx.beginPath();
     drawCtx.moveTo(drawingPath[0].x, drawingPath[0].y);
     for (let i = 1; i < drawingPath.length; i++) {
       drawCtx.lineTo(drawingPath[i].x, drawingPath[i].y);
     }
-    drawCtx.strokeStyle = "blue"; // Set the stroke color for the drawing
+    // Optionally change color based on ink usage
+    const inkUsageRatio = totalInkUsed / maxInkPerShape;
+    if (inkUsageRatio > 0.33) {
+      drawCtx.strokeStyle = "red";
+    } else if (inkUsageRatio > 0.66) {
+      drawCtx.strokeStyle = "orange";
+    } else {
+      drawCtx.strokeStyle = "blue";
+    }
     drawCtx.lineWidth = 2;
     drawCtx.stroke();
   }
 }
 
-function endDrawing(event) {
+function endDrawing() {
   // End drawing
   isDrawing = false;
 
