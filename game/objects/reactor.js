@@ -11,6 +11,8 @@ const ReactorModule = {
       },
     });
 
+    reactor.hitPoints = 1;
+
     return reactor;
   },
 };

@@ -345,11 +345,11 @@ Events.on(engine, "collisionStart", function (event) {
   function bodiesMatch(bodyA, bodyB, label1, label2) {
     return (bodyA.label === label1 && bodyB.label === label2) || (bodyA.label === label2 && bodyB.label === label1);
   }
+
   var pairs = event.pairs;
 
   pairs.forEach((pair) => {
     const { bodyA, bodyB } = pair;
-    console.log(pair);
 
     const x = (bodyA.position.x + bodyB.position.x) / 2;
     const y = (bodyA.position.y + bodyB.position.y) / 2;
@@ -358,17 +358,57 @@ Events.on(engine, "collisionStart", function (event) {
     if (bodiesMatch(bodyA, bodyB, "Tank", "Shell")) {
       console.log("Tank hit by shell!");
       drawExplosion(drawCtx, x, y, 0);
-      // Handle the collision between tank and shell
+
+      // Identify tank and shell
+      const tank = bodyA.label === "Tank" ? bodyA : bodyB;
+      const shell = bodyA.label === "Shell" ? bodyA : bodyB;
+
+      // Reduce hit points
+      tank.hitPoints -= 1;
+      console.log(`Tank hit points remaining: ${tank.hitPoints}`);
+
+      // Remove shell from the world
+      World.remove(engine.world, shell);
+
+      // Check if tank is destroyed
+      if (tank.hitPoints <= 0) {
+        World.remove(engine.world, tank);
+        console.log("Tank destroyed!");
+        // Optionally, trigger an explosion or other visual effect
+        drawExplosion(drawCtx, tank.position.x, tank.position.y, 0);
+      } else {
+        // Optionally, update tank appearance to indicate damage
+        tank.render.strokeStyle = "orange"; // Change color to indicate damage
+      }
     }
 
     // Check if a shell collided with a reactor
     if (bodiesMatch(bodyA, bodyB, "Shell", "Reactor")) {
       console.log("Shell hit a reactor!");
       drawExplosion(drawCtx, x, y, 0);
-      // Handle the collision between shell and reactor
+
+      // Identify reactor and shell
+      const reactor = bodyA.label === "Reactor" ? bodyA : bodyB;
+      const shell = bodyA.label === "Shell" ? bodyA : bodyB;
+
+      // Reduce hit points
+      reactor.hitPoints -= 1;
+      console.log(`Reactor hit points remaining: ${reactor.hitPoints}`);
+
+      // Remove shell from the world
+      World.remove(engine.world, shell);
+
+      // Check if reactor is destroyed
+      if (reactor.hitPoints <= 0) {
+        World.remove(engine.world, reactor);
+        console.log("Reactor destroyed!");
+        // Optionally, trigger an explosion or other visual effect
+        drawExplosion(drawCtx, reactor.position.x, reactor.position.y, 0);
+      }
     }
   });
 });
+
 //#endregion COLLISION HANDLERS
 
 //#endregion EVENT HANDLERS

@@ -19,6 +19,8 @@ const TankModule = {
       },
     });
 
+    tank.hitPoints = 2;
+
     return tank;
   },
 };
