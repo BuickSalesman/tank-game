@@ -618,7 +618,7 @@ function endDrawing() {
     }
 
     if (overlaps) {
-      alert("Shapes cannot overlap, ya dingus! Try again homie.");
+      alert("Shapes cannot overlap. Try drawing again.");
       // Do not increment shapeCount
       // Clear the drawing
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
