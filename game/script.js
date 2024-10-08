@@ -476,7 +476,8 @@ Events.on(mouseConstraint, "mouseup", function (event) {
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
-    releaseAndApplyForce(event);
+    const endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y };
+    releaseAndApplyForce(endingMousePosition);
   }
   if (currentGameState === GameState.POST_GAME) {
     //restart stuff
@@ -798,6 +799,11 @@ function increasePower() {
     powerLevel += 5;
     powerLevel = Math.min(powerLevel, 100); //Ensure power meter does not exceed 100.
     powerMeterFill.style.height = `${powerLevel}%`;
+
+    if (powerLevel >= maxPowerLevel) {
+      const endingMousePosition = { x: mouseConstraint.mouse.position.x, y: mouseConstraint.mouse.position.y };
+      releaseAndApplyForce(endingMousePosition);
+    }
   }
 }
 
@@ -833,10 +839,9 @@ function saveClickPoint(event) {
 }
 
 //To apply normalized force and direction to the tank.
-function releaseAndApplyForce(event) {
+function releaseAndApplyForce(endingMousePosition) {
   if (isMouseDown) {
     isMouseDown = false;
-    endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y }; //Store the end position.
 
     //Calculate the vector from the starting to the ending position.
     let vector = {
