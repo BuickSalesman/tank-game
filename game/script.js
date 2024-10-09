@@ -86,9 +86,9 @@ let mouseConstraint = MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
     // Stiffness controls the mouse's ability to be able to move objects around. 0 for non-interactivity.
-    stiffness: 0.0,
+    stiffness: 0.8,
     render: {
-      visible: false,
+      visible: true,
     },
   },
   collisionFilter: {
@@ -109,7 +109,14 @@ const walls = [
     -500,
     width + 1000,
     1000,
-    {isStatic: true}
+    {
+      isStatic: true,
+      collisionFilter: {
+        group: 1,
+        category: 0,
+        mask: 0,
+      },
+    }
   ),
   // Bottom
   Bodies.rectangle(
@@ -117,7 +124,14 @@ const walls = [
     height + 500,
     width + 1000,
     1000,
-    {isStatic: true}
+    {
+      isStatic: true,
+      collisionFilter: {
+        group: 1,
+        category: 0,
+        mask: 0,
+      },
+    }
   ),
   // Left
   Bodies.rectangle(
@@ -125,7 +139,14 @@ const walls = [
     height / 2,
     1000,
     height + 1000,
-    {isStatic: true}
+    {
+      isStatic: true,
+      collisionFilter: {
+        group: 1,
+        category: 0,
+        mask: 0,
+      },
+    }
   ),
   // Right
   Bodies.rectangle(
@@ -133,7 +154,14 @@ const walls = [
     height / 2,
     1000,
     height + 1000,
-    {isStatic: true}
+    {
+      isStatic: true,
+      collisionFilter: {
+        group: 1,
+        category: 0,
+        mask: 0,
+      },
+    }
   ),
 ];
 
@@ -228,7 +256,7 @@ for (let i = 1; i <= 25; i++) {
 
 const dividingLine = drawCanvas.height / 2;
 let shapeCount = 0; //Counter for number of shapes drawn.
-let maxShapeCount = 10; //Maximum number of shapes.
+let maxShapeCount = 5; //Maximum number of shapes.
 
 //#region DRAWING MARGIN VARIABLES
 const drawingMarginX = tankSize + width * 0.02;
@@ -618,7 +646,7 @@ function endDrawing() {
     }
 
     if (overlaps) {
-      alert("Shapes cannot overlap. Try drawing again.");
+      // alert("Shapes cannot overlap. Try drawing again.");
       // Do not increment shapeCount
       // Clear the drawing
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
@@ -920,4 +948,5 @@ function releaseAndApplyForce(endingMousePosition) {
 //#region BUG LOG
 //Sometimes when shapes are snapped shut, it throws the shapes cannot overlap error.
 //Tanks should not be able to shoot themselves
+//If the power meter is maxed but there is no vector, tank becomes stuck in place and is unmovable (this happened one time, have not been able to duplicate.)
 //#endregion BUG LOG

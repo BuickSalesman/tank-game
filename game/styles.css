@@ -2,8 +2,8 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  width: 100%;
+  height: 100vh;
+  width: 100vw;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -54,7 +54,7 @@ body {
 #powerMeterContainer {
   display: flex;
   align-items: flex-end;
-  width: 50px;
+  width: 3rem;
   height: 60vh;
   border: 2px solid #000;
   margin-left: 20px;
