@@ -15,9 +15,9 @@ const ShellModule = {
         fillStyle: "black",
       },
       collisionFilter: {
-        group: 1,
-        category: 0,
-        mask: 0,
+        group: 0,
+        category: CATEGORY_SHELL,
+        mask: CATEGORY_TANK | CATEGORY_REACTOR,
       },
     });
 

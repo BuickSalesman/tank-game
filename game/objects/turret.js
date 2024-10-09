@@ -10,9 +10,9 @@ const TurretModule = {
         lineWidth: 2,
       },
       collisionFilter: {
-        group: -1,
-        category: 0,
-        mask: 0,
+        group: 0,
+        category: CATEGORY_TURRET,
+        mask: CATEGORY_TANK,
       },
     });
 

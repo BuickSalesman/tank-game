@@ -86,9 +86,9 @@ let mouseConstraint = MouseConstraint.create(engine, {
   mouse: mouse,
   constraint: {
     // Stiffness controls the mouse's ability to be able to move objects around. 0 for non-interactivity.
-    stiffness: 0.8,
+    stiffness: 0,
     render: {
-      visible: true,
+      visible: false,
     },
   },
   collisionFilter: {
@@ -111,11 +111,6 @@ const walls = [
     1000,
     {
       isStatic: true,
-      collisionFilter: {
-        group: 1,
-        category: 0,
-        mask: 0,
-      },
     }
   ),
   // Bottom
@@ -126,11 +121,6 @@ const walls = [
     1000,
     {
       isStatic: true,
-      collisionFilter: {
-        group: 1,
-        category: 0,
-        mask: 0,
-      },
     }
   ),
   // Left
@@ -141,11 +131,6 @@ const walls = [
     height + 1000,
     {
       isStatic: true,
-      collisionFilter: {
-        group: 1,
-        category: 0,
-        mask: 0,
-      },
     }
   ),
   // Right
@@ -156,11 +141,6 @@ const walls = [
     height + 1000,
     {
       isStatic: true,
-      collisionFilter: {
-        group: 1,
-        category: 0,
-        mask: 0,
-      },
     }
   ),
 ];

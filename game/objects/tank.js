@@ -18,9 +18,9 @@ const TankModule = {
         lineWidth: 2,
       },
       collisionFilter: {
-        group: 1,
-        category: 0,
-        mask: 0,
+        group: 0,
+        category: CATEGORY_TANK,
+        mask: CATEGORY_TANK | CATEGORY_TURRET | CATEGORY_FORTRESS | CATEGORY_SHELL,
       },
     });
 
