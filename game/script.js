@@ -39,6 +39,13 @@ let actionMode = null;
 const PLAYER_ONE = 1;
 const PLAYER_TWO = 2;
 
+// Declare current player drawing
+let currentPlayerDrawing = PLAYER_ONE;
+
+// Initialize shape counts for each player
+let shapeCountPlayer1 = 0;
+let shapeCountPlayer2 = 0;
+
 //Declare height, width, and aspect ratio for the canvas.
 const aspectRatio = 1 / 1.4142;
 const baseHeight = Math.min(window.innerHeight * 0.95);
@@ -241,11 +248,12 @@ let maxShapeCount = 10; //Maximum number of shapes.
 //#region DRAWING MARGIN VARIABLES
 const drawingMarginX = tankSize + width * 0.02;
 const drawingMarginY = tankSize + height * 0.02;
-const dividingLineMargin = tankSize + height * 0.02;
+const dividingLineMargin = tankSize + height * 0.005;
 //#endregion DRAWING MARGIN VARIABLES
 
 let totalInkUsed = 0;
-const maxInkPerShape = 750;
+const maxInkPerShape = baseHeight * 0.6;
+console.log(maxInkPerShape);
 
 let isDrawingBelow = true;
 let isDrawing = false;
@@ -574,6 +582,23 @@ function drawNoDrawZones() {
     drawCtx.stroke();
   });
 }
+
+function removeFortressNoDrawZones() {
+  // Assuming you have stored fortress noDrawZones separately when you added them
+  // Let's modify the fortressNoDrawZone function to store fortress zones separately
+  // If you haven't done this yet, you need to adjust the fortressNoDrawZone function first
+
+  // Remove fortress noDrawZones from the noDrawZones array
+  noDrawZones.forEach((zone) => {
+    const index = noDrawZones.indexOf(zone);
+    if (index !== -1) {
+      noDrawZones.splice(index, 1);
+    }
+  });
+
+  // Clear the fortressNoDrawZones array
+  noDrawZones = [];
+}
 //#endregion NODRAWZONE FUNCTIONS
 
 function drawExplosion(drawCtx, x, y, frame) {
@@ -597,22 +622,21 @@ function drawDividingLine() {
 function startDrawing() {
   const mousePosition = mouseConstraint.mouse.position;
 
-  if (shapeCount >= maxShapeCount) return;
+  // Enforce drawing area per player
+  if (currentPlayerDrawing === PLAYER_ONE) {
+    isDrawingBelow = true;
+    if (mousePosition.y < dividingLine + dividingLineMargin) {
+      mousePosition.y = dividingLine + dividingLineMargin;
+    }
+  } else if (currentPlayerDrawing === PLAYER_TWO) {
+    isDrawingBelow = false;
+    if (mousePosition.y > dividingLine - dividingLineMargin) {
+      mousePosition.y = dividingLine - dividingLineMargin;
+    }
+  }
 
   // Clamp mouse position within drawable area horizontally
   mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
-
-  // Check if mouse position is within the forbidden dividing line margin area
-  const upperForbiddenY = dividingLine - dividingLineMargin;
-  const lowerForbiddenY = dividingLine + dividingLineMargin;
-  if (mousePosition.y >= upperForbiddenY && mousePosition.y <= lowerForbiddenY) {
-    // Snap to the nearest edge of the forbidden area
-    if (mousePosition.y < dividingLine) {
-      mousePosition.y = upperForbiddenY;
-    } else {
-      mousePosition.y = lowerForbiddenY;
-    }
-  }
 
   // Clamp mouse position within drawable area vertically
   mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
@@ -628,20 +652,19 @@ function draw() {
 
   if (!isDrawing) return;
 
-  // Clamp mouse position within drawable area horizontally
-  mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
-
-  // Check if mouse position is within the forbidden dividing line margin area
-  const upperForbiddenY = dividingLine - dividingLineMargin;
-  const lowerForbiddenY = dividingLine + dividingLineMargin;
-  if (mousePosition.y >= upperForbiddenY && mousePosition.y <= lowerForbiddenY) {
-    // Snap to the nearest edge of the forbidden area
-    if (mousePosition.y < dividingLine) {
-      mousePosition.y = upperForbiddenY;
-    } else {
-      mousePosition.y = lowerForbiddenY;
+  // Enforce drawing area per player
+  if (currentPlayerDrawing === PLAYER_ONE) {
+    if (mousePosition.y < dividingLine + dividingLineMargin) {
+      mousePosition.y = dividingLine + dividingLineMargin;
+    }
+  } else if (currentPlayerDrawing === PLAYER_TWO) {
+    if (mousePosition.y > dividingLine - dividingLineMargin) {
+      mousePosition.y = dividingLine - dividingLineMargin;
     }
   }
+
+  // Clamp mouse position within drawable area horizontally
+  mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
 
   // Clamp mouse position within drawable area vertically
   mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
@@ -750,13 +773,24 @@ function endDrawing() {
       // Shape is valid, add it to allPaths
       allPaths.push(drawingPath);
 
-      // Increment shape count
-      shapeCount++;
-      if (shapeCount === maxShapeCount) {
-        currentGameState = GameState.GAME_RUNNING;
-        // After max shapes, create Matter.js bodies from shapes
-        createBodiesFromShapes();
+      // Increment shape count for current player
+      if (currentPlayerDrawing === PLAYER_ONE) {
+        shapeCountPlayer1++;
+        if (shapeCountPlayer1 >= 5) {
+          // Switch to player 2
+          currentPlayerDrawing = PLAYER_TWO;
+        }
+      } else if (currentPlayerDrawing === PLAYER_TWO) {
+        shapeCountPlayer2++;
+        if (shapeCountPlayer2 >= 5) {
+          // Both players have finished drawing
+          currentGameState = GameState.GAME_RUNNING;
+          // After max shapes, create Matter.js bodies from shapes
+          createBodiesFromShapes();
+          removeFortressNoDrawZones();
+        }
       }
+
       // Clear the drawing and re-draw all shapes
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
       drawDividingLine(); // Re-draw the dividing line
