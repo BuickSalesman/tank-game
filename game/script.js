@@ -236,11 +236,12 @@ for (let i = 1; i <= 25; i++) {
 
 const dividingLine = drawCanvas.height / 2;
 let shapeCount = 0; //Counter for number of shapes drawn.
-let maxShapeCount = 5; //Maximum number of shapes.
+let maxShapeCount = 10; //Maximum number of shapes.
 
 //#region DRAWING MARGIN VARIABLES
 const drawingMarginX = tankSize + width * 0.02;
 const drawingMarginY = tankSize + height * 0.02;
+const dividingLineMargin = tankSize + height * 0.02;
 //#endregion DRAWING MARGIN VARIABLES
 
 let totalInkUsed = 0;
@@ -252,6 +253,8 @@ let drawingPath = [];
 let allPaths = []; // Array to store all completed paths
 let lastLineTime = 0; // To track when to add a new line
 const lineInterval = 10; // 100 milliseconds
+
+let noDrawZones = [];
 
 //#endregion DRAWING VARIABLES
 
@@ -454,6 +457,7 @@ World.add(world, reactors);
 
 //Add fortress(es) to the game world.
 World.add(world, fortresses);
+fortressNoDrawZone();
 
 //Add turret(s) to the game world.
 World.add(world, turrets);
@@ -522,6 +526,56 @@ Events.on(mouseConstraint, "mouseup", function (event) {
 
 //#region DRAWING FUNCTIONS
 
+//#region NODRAWZONE FUNCTIONS
+function fortressNoDrawZone() {
+  fortresses.forEach((fortress) => {
+    const x = fortress.position.x;
+    const y = fortress.position.y;
+    const width = fortressWidth;
+    const height = fortressHeight;
+
+    const fortressPadding = baseHeight * 0.05;
+
+    const halfFortressWidth = width / 2 + fortressPadding;
+    const halfFortressHeight = height / 2 + fortressPadding;
+
+    const rectangle = [
+      { x: x - halfFortressWidth, y: y - halfFortressHeight },
+      { x: x + halfFortressWidth, y: y - halfFortressHeight },
+      { x: x + halfFortressWidth, y: y + halfFortressHeight },
+      { x: x - halfFortressWidth, y: y + halfFortressHeight },
+    ];
+
+    noDrawZones.push(rectangle);
+  });
+}
+
+function drawNoDrawZones() {
+  drawCtx.strokeStyle = "red";
+  drawCtx.lineWidth = 2;
+  noDrawZones.forEach((rectangle) => {
+    // Draw the rectangle
+    drawCtx.beginPath();
+    drawCtx.moveTo(rectangle[0].x, rectangle[0].y);
+    for (let i = 1; i < rectangle.length; i++) {
+      drawCtx.lineTo(rectangle[i].x, rectangle[i].y);
+    }
+    drawCtx.closePath();
+    drawCtx.stroke();
+
+    // Draw the X inside the rectangle
+    drawCtx.beginPath();
+    // Line from top-left to bottom-right
+    drawCtx.moveTo(rectangle[0].x, rectangle[0].y);
+    drawCtx.lineTo(rectangle[2].x, rectangle[2].y);
+    // Line from top-right to bottom-left
+    drawCtx.moveTo(rectangle[1].x, rectangle[1].y);
+    drawCtx.lineTo(rectangle[3].x, rectangle[3].y);
+    drawCtx.stroke();
+  });
+}
+//#endregion NODRAWZONE FUNCTIONS
+
 function drawExplosion(drawCtx, x, y, frame) {
   if (frame < explosionFrames.length) {
     drawCtx.clearRect(x - 50, y - 50, 100, 100);
@@ -545,14 +599,23 @@ function startDrawing() {
 
   if (shapeCount >= maxShapeCount) return;
 
-  if (
-    mousePosition.x < drawingMarginX ||
-    mousePosition.x > width - drawingMarginX ||
-    mousePosition.y < drawingMarginY ||
-    mousePosition.y > height - drawingMarginY
-  ) {
-    return; // Don't start drawing if outside drawable area
+  // Clamp mouse position within drawable area horizontally
+  mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
+
+  // Check if mouse position is within the forbidden dividing line margin area
+  const upperForbiddenY = dividingLine - dividingLineMargin;
+  const lowerForbiddenY = dividingLine + dividingLineMargin;
+  if (mousePosition.y >= upperForbiddenY && mousePosition.y <= lowerForbiddenY) {
+    // Snap to the nearest edge of the forbidden area
+    if (mousePosition.y < dividingLine) {
+      mousePosition.y = upperForbiddenY;
+    } else {
+      mousePosition.y = lowerForbiddenY;
+    }
   }
+
+  // Clamp mouse position within drawable area vertically
+  mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
 
   totalInkUsed = 0;
   isDrawing = true;
@@ -565,7 +628,22 @@ function draw() {
 
   if (!isDrawing) return;
 
+  // Clamp mouse position within drawable area horizontally
   mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
+
+  // Check if mouse position is within the forbidden dividing line margin area
+  const upperForbiddenY = dividingLine - dividingLineMargin;
+  const lowerForbiddenY = dividingLine + dividingLineMargin;
+  if (mousePosition.y >= upperForbiddenY && mousePosition.y <= lowerForbiddenY) {
+    // Snap to the nearest edge of the forbidden area
+    if (mousePosition.y < dividingLine) {
+      mousePosition.y = upperForbiddenY;
+    } else {
+      mousePosition.y = lowerForbiddenY;
+    }
+  }
+
+  // Clamp mouse position within drawable area vertically
   mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
 
   // Calculate the length of the new segment
@@ -642,6 +720,7 @@ function endDrawing() {
 
     // Before adding the shape, check for overlaps with existing shapes
     let overlaps = false;
+
     for (let i = 0; i < allPaths.length; i++) {
       if (polygonsOverlap(drawingPath, allPaths[i])) {
         overlaps = true;
@@ -649,8 +728,18 @@ function endDrawing() {
       }
     }
 
+    // Check overlap with no-draw zones
+    if (!overlaps) {
+      for (let i = 0; i < noDrawZones.length; i++) {
+        if (polygonsOverlap(drawingPath, noDrawZones[i])) {
+          overlaps = true;
+          break;
+        }
+      }
+    }
+
     if (overlaps) {
-      // alert("Shapes cannot overlap. Try drawing again.");
+      alert("Shapes cannot overlap, or be in no draw zones. Try drawing again.");
       // Do not increment shapeCount
       // Clear the drawing
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
@@ -691,6 +780,8 @@ function redrawAllShapes() {
       drawCtx.stroke();
     }
   }
+
+  drawNoDrawZones();
 }
 
 function createBodiesFromShapes() {
