@@ -265,8 +265,18 @@ const forceScalingFactor = maxTravelDistance / Math.pow(100, 1.5);
 let powerLevel = 0;
 const maxPowerLevel = 100;
 let isMouseDown = false;
+let isMouseMoving = false;
 let startingMousePosition = null;
 let endingMousePosition = null;
+
+//#region WOBBLE
+
+let isWobbling = false;
+let wobbleStartTime = 0;
+const wobbleFrequency = 60; // Controls the speed of the wobble
+const wobbleAmplitude = 0.1; // Maximum rotation angle in radians (about 2.86 degrees)
+
+//#endregion WOBBLE
 //#endregion MOVE AND SHOOT VARIABLES
 //#endregion VARIABLES
 
@@ -302,17 +312,28 @@ Events.on(render, "afterRender", function () {
 
 //#region BEFOREUPDATE HANDLER
 Events.on(engine, "beforeUpdate", () => {
-  if (currentGameState === GameState.GAME_RUNNING && isMouseDown) {
-    if (
-      (selectedUnit === turret1 || selectedUnit === turret2 || selectedUnit === turret3 || selectedUnit === turret4) &&
-      actionMode === "move"
-    ) {
-      return;
-    } else {
-      increasePower();
+  if (currentGameState === GameState.GAME_RUNNING) {
+    if (isMouseDown && isMouseMoving) {
+      if (
+        (selectedUnit === turret1 ||
+          selectedUnit === turret2 ||
+          selectedUnit === turret3 ||
+          selectedUnit === turret4) &&
+        actionMode === "move"
+      ) {
+        return;
+      } else {
+        increasePower();
+      }
+    }
+
+    // Apply wobble effect regardless of mouse movement
+    if (isWobbling && selectedUnit) {
+      applyWobbleEffect();
     }
   }
 });
+
 //#endregion BEFOREUPDATE HANDLER
 
 //#region AFTERUPDATE HANDLER
@@ -451,6 +472,8 @@ Events.on(mouseConstraint, "mousedown", function (event) {
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
+    isMouseMoving = false;
+
     saveClickPoint(event);
   }
   if (currentGameState === GameState.POST_GAME) {
@@ -467,6 +490,7 @@ Events.on(mouseConstraint, "mousemove", function (event) {
     draw(event);
   }
   if (currentGameState === GameState.GAME_RUNNING) {
+    isMouseMoving = true;
     //shoot stuff
   }
   if (currentGameState === GameState.POST_GAME) {
@@ -688,9 +712,9 @@ function createBodiesFromShapes() {
           isStatic: true,
           render: { fillStyle: "black" },
           collisionFilter: {
-            group: 1,
-            category: 0,
-            mask: 0,
+            group: 0,
+            category: CATEGORY_SHAPE,
+            mask: CATEGORY_SHELL | CATEGORY_TANK,
           },
         });
         World.add(engine.world, circle);
@@ -800,6 +824,21 @@ function isPointInPolygon(point, polygon) {
 
 //To increase power meter when called.
 //INCREASE POWER CALLED IN BEFOREUPDATE
+function startWobble() {
+  if (!isWobbling && selectedUnit) {
+    isWobbling = true;
+    wobbleStartTime = Date.now();
+  }
+}
+
+function applyWobbleEffect() {
+  const currentTime = Date.now();
+  const elapsedTime = currentTime - wobbleStartTime;
+
+  const wobbleAngle = wobbleAmplitude * Math.cos(elapsedTime / wobbleFrequency);
+  Body.setAngle(selectedUnit, wobbleAngle);
+}
+
 function increasePower() {
   if (!actionMode) {
     return;
@@ -832,6 +871,8 @@ function saveClickPoint(event) {
       startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
       //Store the selected tank.
       selectedUnit = tank;
+
+      startWobble();
     }
   });
 
@@ -850,6 +891,11 @@ function saveClickPoint(event) {
 function releaseAndApplyForce(endingMousePosition) {
   if (isMouseDown) {
     isMouseDown = false;
+
+    if (isWobbling && selectedUnit) {
+      isWobbling = false;
+      Body.setAngle(selectedUnit, 0);
+    }
 
     //Calculate the vector from the starting to the ending position.
     let vector = {

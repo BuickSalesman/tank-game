@@ -17,7 +17,7 @@ const ShellModule = {
       collisionFilter: {
         group: 0,
         category: CATEGORY_SHELL,
-        mask: CATEGORY_TANK | CATEGORY_REACTOR,
+        mask: CATEGORY_TANK | CATEGORY_REACTOR | CATEGORY_SHAPE,
       },
     });
 

@@ -20,7 +20,7 @@ const TankModule = {
       collisionFilter: {
         group: 0,
         category: CATEGORY_TANK,
-        mask: CATEGORY_TANK | CATEGORY_TURRET | CATEGORY_FORTRESS | CATEGORY_SHELL,
+        mask: CATEGORY_TANK | CATEGORY_TURRET | CATEGORY_FORTRESS | CATEGORY_SHELL | CATEGORY_SHAPE,
       },
     });
 
