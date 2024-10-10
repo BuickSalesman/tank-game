@@ -284,6 +284,7 @@ let endingMousePosition = null;
 
 let isWobbling = false;
 let wobbleStartTime = 0;
+let initialWobbleAngle = 0;
 const wobbleFrequency = 60; // Controls the speed of the wobble
 const wobbleAmplitude = 0.1; // Maximum rotation angle in radians (about 2.86 degrees)
 
@@ -953,6 +954,7 @@ function startWobble() {
   if (!isWobbling && selectedUnit) {
     isWobbling = true;
     wobbleStartTime = Date.now();
+    initialWobbleAngle = selectedUnit.angle;
   }
 }
 
@@ -961,7 +963,7 @@ function applyWobbleEffect() {
   const elapsedTime = currentTime - wobbleStartTime;
 
   const wobbleAngle = wobbleAmplitude * Math.cos(elapsedTime / wobbleFrequency);
-  Body.setAngle(selectedUnit, wobbleAngle);
+  Body.setAngle(selectedUnit, initialWobbleAngle + wobbleAngle);
 }
 
 function increasePower() {
