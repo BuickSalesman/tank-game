@@ -529,9 +529,9 @@ Events.on(engine, "collisionStart", function (event) {
       World.remove(engine.world, shell);
     }
 
-    if (bodiesMatch(bodyA, bodyB, "Tank", "Shape")) {
-      console.log("Tank hit shape!");
-    }
+    // if (bodiesMatch(bodyA, bodyB, "Tank", "Shape")) {
+    //   console.log("Tank hit shape!");
+    // }
   });
 });
 
@@ -1127,9 +1127,10 @@ function increasePower() {
   if (!actionMode) {
     return;
   } else if (powerLevel < maxPowerLevel) {
-    powerLevel += 4;
+    powerLevel += 3.5;
     powerLevel = Math.min(powerLevel, 100); //Ensure power meter does not exceed 100.
     powerMeterFill.style.height = `${powerLevel}%`;
+    console.log(powerLevel);
 
     if (powerLevel >= maxPowerLevel) {
       const endingMousePosition = { x: mouseConstraint.mouse.position.x, y: mouseConstraint.mouse.position.y };
