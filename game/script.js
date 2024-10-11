@@ -236,7 +236,7 @@ let shells = [];
 const explosionFrames = [];
 for (let i = 1; i <= 25; i++) {
   const img = new Image();
-  img.src = `assets/EXPLOSION-FRAMES/explosion4/${i}.png`; // Change this path to your actual explosion images
+  img.src = `assets/EXPLOSION/explosion4/${i}.png`; // Change this path to your actual explosion images
   explosionFrames.push(img);
 }
 //#endregion EXPLOSIONS!!!!
@@ -290,6 +290,14 @@ const wobbleAmplitude = 0.1; // Maximum rotation angle in radians (about 2.86 de
 
 //#endregion WOBBLE
 //#endregion MOVE AND SHOOT VARIABLES
+
+//#region TURN TIMER VARIABLES
+let currentPlayerTurn = PLAYER_ONE;
+let turnTimeLeft = 45;
+let turnTimerInterval = null;
+let hasMovedOrShotThisTurn = false;
+
+//#endregion TURN TIMER VARIABLES
 //#endregion VARIABLES
 
 //#region MATTER AND SOCKET SETUP
@@ -533,6 +541,39 @@ Events.on(mouseConstraint, "mouseup", function (event) {
 
 //#region FUNCTIONS
 
+//#region TURN AND TIMER FUNCTIONS
+function startTurnTimer() {
+  hasMovedOrShotThisTurn = false;
+  turnTimeLeft = 46; // Reset turn time
+  if (turnTimerInterval) {
+    clearInterval(turnTimerInterval);
+  }
+  turnTimerInterval = setInterval(() => {
+    turnTimeLeft--;
+    updateTurnTimerDisplay(); // Update UI
+    if (turnTimeLeft <= 0) {
+      clearInterval(turnTimerInterval);
+      endTurn();
+    }
+  }, 1000); // Update every second
+}
+
+function endTurn() {
+  if (turnTimerInterval) {
+    clearInterval(turnTimerInterval);
+    turnTimerInterval = null;
+  }
+  currentPlayerTurn = currentPlayerTurn === PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
+  startTurnTimer();
+}
+
+function updateTurnTimerDisplay() {
+  const timerElement = document.getElementById("turnTimer");
+  timerElement.textContent = `${turnTimeLeft}`;
+}
+
+//#endregion TURN AND TIMER FUNCTIONS
+
 //#region DRAWING FUNCTIONS
 
 //#region NODRAWZONE FUNCTIONS
@@ -763,7 +804,7 @@ function endDrawing() {
     }
 
     if (overlaps) {
-      alert("Shapes cannot overlap, or be in no draw zones. Try drawing again.");
+      // alert("Shapes cannot overlap, or be in no draw zones. Try drawing again.");
       // Do not increment shapeCount
       // Clear the drawing
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
@@ -789,6 +830,8 @@ function endDrawing() {
           // After max shapes, create Matter.js bodies from shapes
           createBodiesFromShapes();
           removeFortressNoDrawZones();
+          startTurnTimer();
+          updateTurnTimerDisplay();
         }
       }
 
@@ -948,7 +991,6 @@ function isPointInPolygon(point, polygon) {
 
 //#region MOVE AND SHOOT FUNCTIONS
 
-//To increase power meter when called.
 //INCREASE POWER CALLED IN BEFOREUPDATE
 function startWobble() {
   if (!isWobbling && selectedUnit) {
@@ -966,6 +1008,7 @@ function applyWobbleEffect() {
   Body.setAngle(selectedUnit, initialWobbleAngle + wobbleAngle);
 }
 
+//To increase power meter when called.
 function increasePower() {
   if (!actionMode) {
     return;
@@ -990,9 +1033,10 @@ function resetPower() {
 
 //To save the x,y coords of mouse click within a tank.
 function saveClickPoint(event) {
+  if (hasMovedOrShotThisTurn) return;
   let mousePosition = event.mouse.position;
   tanks.forEach((tank) => {
-    if (Bounds.contains(tank.bounds, mousePosition)) {
+    if (Bounds.contains(tank.bounds, mousePosition) && tank.playerId === currentPlayerTurn) {
       isMouseDown = true;
       //Save the point of click.
       startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
@@ -1004,7 +1048,7 @@ function saveClickPoint(event) {
   });
 
   turrets.forEach((turret) => {
-    if (Bounds.contains(turret.bounds, mousePosition)) {
+    if (Bounds.contains(turret.bounds, mousePosition) && turret.playerId === currentPlayerTurn) {
       isMouseDown = true;
       //Save the point of click.
       startingMousePosition = { x: mousePosition.x, y: mousePosition.y };
@@ -1041,6 +1085,7 @@ function releaseAndApplyForce(endingMousePosition) {
     }
 
     let normalizedVector = { x: vector.x / vectorLength, y: vector.y / vectorLength };
+    let actionTaken = false;
 
     //Apply force based on the vector, if powerLevel is greater than 0.
     if (powerLevel > 0) {
@@ -1054,6 +1099,7 @@ function releaseAndApplyForce(endingMousePosition) {
           x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
           y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
         });
+        actionTaken = true;
       } else if (actionMode === "shoot") {
         console.log(forceMagnitude);
         const shellSize = 5; // Adjust as needed
@@ -1087,11 +1133,16 @@ function releaseAndApplyForce(endingMousePosition) {
         //Add shell to the world.
         World.add(world, shell);
         console.log(shell.playerId);
+        actionTaken = true;
       }
     }
 
     //Ensure that power meter and other values are reset after mouseup.
     resetPower();
+    if (actionTaken && !hasMovedOrShotThisTurn) {
+      hasMovedOrShotThisTurn = true;
+      endTurn();
+    }
   }
 }
 //#endregion MOVE AND SHOOT FUNCTIONS

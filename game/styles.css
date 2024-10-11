@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "DeskScratch";
+  src: url("assets/fonts/DeskScratch.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
 html,
 body {
   margin: 0;
@@ -26,21 +33,20 @@ body {
 
 #gameContainer {
   position: relative;
-  --aspect-ratio: 0.7071; /* 1 / 1.4142 - the ratio of a standard piece of A4 lined notebook paper */
+  --aspect-ratio: 0.7071; /* A4 paper ratio */
   height: 95vh;
-  width: calc(var(--aspect-ratio) * 95vh); /* Width is now flipped to be aligned with the A4 paper ratio */
+  width: calc(var(--aspect-ratio) * 95vh);
   background-color: white;
   display: flex;
   justify-content: center;
   align-items: center;
   border: 2px solid #000;
-  margin: 20px;
+  margin: 2rem;
   background-image: url("assets/paper.jpg");
   background-size: cover;
   background-position: center;
 }
 
-/* This makes both canvases stack on top of each other */
 #drawCanvas,
 #physicsCanvas {
   position: absolute;
@@ -51,38 +57,65 @@ body {
   background-color: transparent; /* Ensure the background is transparent */
 }
 
+#sideContainer {
+  display: flex;
+  flex-direction: column; /* Stacks power meter, buttons, and timer vertically */
+  align-items: center;
+}
+
 #powerMeterContainer {
   display: flex;
   align-items: flex-end;
   width: 3rem;
   height: 60vh;
   border: 2px solid #000;
-  margin-left: 20px;
-  position: relative;
+  margin-bottom: 1rem; /* Space between power meter and buttons */
 }
 
 #powerMeterFill {
   width: 100%;
   background-color: red;
-  height: 0%;
-  /* smooth fill */
+  height: 0%; /* Initial height of the power meter fill */
 }
 
 .button-container {
-  margin-top: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.5rem;
+  margin-bottom: 1rem; /* Space between buttons and turn timer */
 }
 
 .button {
-  padding: 10px 20px;
-  background-color: orange;
-  color: black;
-  border-radius: 5px;
+  font-family: "DeskScratch";
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: rgba(15, 15, 15, 0);
+  border: none;
+  border-radius: 0.5rem;
   cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .button:hover {
-  background-color: #cf8b0e;
+  background-color: rgba(15, 15, 15, 0.2);
+}
+
+.button:active {
+  transform: scale(0.98); /* Slightly reduce size to give pressed look */
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5); /* Create inset shadow for pressed effect */
+  background-color: rgba(15, 15, 15, 0.3); /* Slightly darker background on press */
+}
+
+#turnTimerContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#turnTimer {
+  font-family: "DeskScratch";
+  font-size: 3.2rem;
+  color: rgba(15, 15, 15, 0.9);
+  text-align: center;
+  -webkit-text-stroke: 0.005rem rgba(200, 200, 200, 0.9);
 }
