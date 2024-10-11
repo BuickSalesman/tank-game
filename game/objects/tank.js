@@ -7,11 +7,12 @@ const TankModule = {
     const tank = Matter.Bodies.rectangle(x, y, tankSize, tankSize, {
       label: "Tank",
       playerId: playerId,
-      restitution: 0.1,
+      restitution: 0,
       // Require two bodies to measure friction.
       friction: 1,
       frictionAir: 0.1,
       density: density, // Set density to achieve desired mass
+      isStatic: false,
       render: {
         fillStyle: "transparent",
         strokeStyle: "black",
@@ -25,6 +26,8 @@ const TankModule = {
     });
 
     tank.hitPoints = 2;
+
+    tank.fixedConstraint = null;
 
     return tank;
   },

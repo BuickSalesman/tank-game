@@ -6,6 +6,7 @@ const {
   Bounds,
   Engine,
   MouseConstraint,
+  Constraint,
   Mouse,
   Render,
   Runner,
@@ -326,7 +327,7 @@ World.add(world, mouseConstraint);
 //#region AFTERRENDER HANDLER
 Events.on(render, "afterRender", function () {
   drawDividingLine();
-  draw(event);
+  draw();
 });
 //#endregion AFTERRENDER HANDLER
 
@@ -368,6 +369,30 @@ Events.on(engine, "afterUpdate", function () {
       shell = null;
     }
   }
+
+  tanks.forEach(function (tank) {
+    const speed = Math.hypot(tank.velocity.x, tank.velocity.y);
+    if (speed < 0.1) {
+      // Stop any residual motion
+      Body.setVelocity(tank, { x: 0, y: 0 });
+      Body.setAngularVelocity(tank, 0);
+
+      if (!tank.fixedConstraint) {
+        // Create a constraint to fix the tank's position
+        tank.fixedConstraint = Constraint.create({
+          bodyA: tank,
+          pointB: { x: tank.position.x, y: tank.position.y },
+          stiffness: 1,
+          length: 0,
+          render: {
+            visible: false,
+          },
+        });
+
+        World.add(engine.world, tank.fixedConstraint);
+      }
+    }
+  });
 });
 //#endregion AFTERUPDATE HANDLER
 
@@ -427,7 +452,6 @@ Events.on(engine, "collisionStart", function (event) {
       }
     }
 
-    // Check if a shell collided with a reactor
     // Check if a shell collided with a reactor
     if (bodiesMatch(bodyA, bodyB, "Shell", "Reactor")) {
       console.log("Shell hit a reactor!");
@@ -835,7 +859,9 @@ function endDrawing() {
           // After max shapes, create Matter.js bodies from shapes
           createBodiesFromShapes();
           removeFortressNoDrawZones();
-          coinFlip();
+          setTimeout(() => {
+            coinFlip();
+          }, 500);
           startTurnTimer();
         }
       }
@@ -1099,7 +1125,10 @@ function releaseAndApplyForce(endingMousePosition) {
       const forceMagnitude = scaledPowerLevel * forceScalingFactor * 0.1;
 
       if (actionMode === "move") {
-        console.log(forceMagnitude);
+        if (selectedUnit.fixedConstraint) {
+          World.remove(engine.world, selectedUnit.fixedConstraint);
+          selectedUnit.fixedConstraint = null;
+        }
         Body.applyForce(selectedUnit, selectedUnit.position, {
           x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
           y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
