@@ -234,6 +234,8 @@ let shells = [];
 
 //#region EXPLOSIONS!!!!
 const explosionFrames = [];
+
+//REFACTOR
 for (let i = 1; i <= 25; i++) {
   const img = new Image();
   img.src = `assets/EXPLOSION/explosion4/${i}.png`; // Change this path to your actual explosion images
@@ -331,6 +333,7 @@ Runner.run(runner, engine);
 //Add the ability for mouse input into the physics world.
 World.add(world, mouseConstraint);
 
+//REFACTOR
 startDrawTimer();
 
 //#endregion MATTER AND SOCKET SETUP
@@ -721,6 +724,7 @@ function drawNoDrawZones() {
 }
 
 function removeFortressNoDrawZones() {
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
   noDrawZones = [];
 }
 //#endregion NODRAWZONE FUNCTIONS
