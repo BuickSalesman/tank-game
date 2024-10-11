@@ -835,8 +835,8 @@ function endDrawing() {
           // After max shapes, create Matter.js bodies from shapes
           createBodiesFromShapes();
           removeFortressNoDrawZones();
+          coinFlip();
           startTurnTimer();
-          updateTurnTimerDisplay();
         }
       }
 
@@ -1070,7 +1070,7 @@ function releaseAndApplyForce(endingMousePosition) {
 
     if (isWobbling && selectedUnit) {
       isWobbling = false;
-      Body.setAngle(selectedUnit, 0);
+      Body.setAngle(selectedUnit, initialWobbleAngle);
     }
 
     //Calculate the vector from the starting to the ending position.
@@ -1151,6 +1151,19 @@ function releaseAndApplyForce(endingMousePosition) {
   }
 }
 //#endregion MOVE AND SHOOT FUNCTIONS
+
+//#region COIN FLIP FUNCTIONS
+function coinFlip() {
+  // Randomly decide which player goes first (50% chance for each)
+  const result = Math.random() < 0.5 ? PLAYER_ONE : PLAYER_TWO;
+
+  // Set the current player's turn based on the coin flip result
+  currentPlayerTurn = result;
+
+  // Display the result in the console or on the UI
+  alert(`Player ${currentPlayerTurn} wins the coin flip and goes first!`);
+}
+//#endregion COIN FLIP FUNCTIONS
 
 //#region WIN OR LOSE FUNCTIONS
 function checkAllTanksDestroyed() {
