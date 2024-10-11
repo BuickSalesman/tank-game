@@ -9,7 +9,7 @@ const TankModule = {
       playerId: playerId,
       restitution: 0,
       // Require two bodies to measure friction.
-      friction: 1,
+      friction: 0.005,
       frictionAir: 0.1,
       density: density, // Set density to achieve desired mass
       isStatic: false,

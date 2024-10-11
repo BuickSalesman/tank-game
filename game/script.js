@@ -477,6 +477,15 @@ Events.on(engine, "collisionStart", function (event) {
         }, 1000);
       }
     }
+
+    if (bodiesMatch(bodyA, bodyB, "Shell", "Shape")) {
+      const shell = bodyA.label === "Shell" ? bodyA : bodyB;
+      World.remove(engine.world, shell);
+    }
+
+    if (bodiesMatch(bodyA, bodyB, "Tank", "Shape")) {
+      console.log("Tank hit shape!");
+    }
   });
 });
 
@@ -892,7 +901,7 @@ function createBodiesFromShapes() {
     const path = allPaths[i];
 
     // Create circles along the line segments of the path
-    const circleRadius = 1; // Adjust the radius as needed
+    const circleRadius = 2; // Adjust the radius as needed
 
     for (let j = 0; j < path.length - 1; j++) {
       const startPoint = path[j];
@@ -911,11 +920,15 @@ function createBodiesFromShapes() {
             category: CATEGORY_SHAPE,
             mask: CATEGORY_SHELL | CATEGORY_TANK,
           },
+          friction: 0.005,
+          restitution: 0,
         });
         World.add(engine.world, circle);
       }
     }
   }
+
+  allPaths = [];
 }
 
 function getLinePoints(x0, y0, x1, y1) {
