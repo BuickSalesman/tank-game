@@ -417,14 +417,17 @@ Events.on(engine, "collisionStart", function (event) {
       if (tank.hitPoints <= 0) {
         World.remove(engine.world, tank);
         console.log("Tank destroyed!");
-        // Optionally, trigger an explosion or other visual effect
         drawExplosion(drawCtx, tank.position.x, tank.position.y, 0);
+
+        // Call the function to check if all tanks of a player are destroyed
+        checkAllTanksDestroyed();
       } else {
         // Optionally, update tank appearance to indicate damage
         tank.render.strokeStyle = "orange"; // Change color to indicate damage
       }
     }
 
+    // Check if a shell collided with a reactor
     // Check if a shell collided with a reactor
     if (bodiesMatch(bodyA, bodyB, "Shell", "Reactor")) {
       console.log("Shell hit a reactor!");
@@ -444,12 +447,14 @@ Events.on(engine, "collisionStart", function (event) {
       // Check if reactor is destroyed
       if (reactor.hitPoints <= 0) {
         World.remove(engine.world, reactor);
-        console.log("Reactor destroyed!");
-        // Optionally, trigger an explosion or other visual effect
         drawExplosion(drawCtx, reactor.position.x, reactor.position.y, 0);
 
+        // Determine which player lost their reactor
+        const losingPlayerId = reactor.playerId;
+        const winningPlayerId = losingPlayerId === 1 ? 2 : 1;
+
         setTimeout(() => {
-          alert("You win or lose! Dismiss this to replay.");
+          alert(`Player ${winningPlayerId} wins! Dismiss this to replay.`);
           location.reload();
         }, 1000);
       }
@@ -1146,6 +1151,25 @@ function releaseAndApplyForce(endingMousePosition) {
   }
 }
 //#endregion MOVE AND SHOOT FUNCTIONS
+
+//#region WIN OR LOSE FUNCTIONS
+function checkAllTanksDestroyed() {
+  const player1TanksDestroyed = tank1.hitPoints <= 0 && tank2.hitPoints <= 0;
+  const player2TanksDestroyed = tank3.hitPoints <= 0 && tank4.hitPoints <= 0;
+
+  if (player1TanksDestroyed) {
+    setTimeout(() => {
+      alert("Player 2 wins! Dismiss this to replay.");
+      location.reload(); // Refresh the page to restart the game
+    }, 1000);
+  } else if (player2TanksDestroyed) {
+    setTimeout(() => {
+      alert("Player 1 wins! Dismiss this to replay.");
+      location.reload(); // Refresh the page to restart the game
+    }, 1000);
+  }
+}
+//#endregion WIN OR LOSE FUNCTIONS
 
 //#endregion FUNCTIONS
 
