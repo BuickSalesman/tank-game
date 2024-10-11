@@ -27,7 +27,6 @@ const world = engine.world;
 
 //Game state setup.
 const GameState = Object.freeze({
-  TUTORIAL: "TUTORIAL",
   PRE_GAME: "PRE_GAME",
   GAME_RUNNING: "GAME_RUNNING",
   POST_GAME: "POST_GAME",
@@ -299,7 +298,18 @@ let turnTimeLeft = 45;
 let turnTimerInterval = null;
 let hasMovedOrShotThisTurn = false;
 
+let drawTimeLeft = 120; // Duration of the draw phase in seconds (e.g., 120 seconds)
+let drawTimerInterval = null;
+const drawTimerDisplay = document.getElementById("Timer");
+
 //#endregion TURN TIMER VARIABLES
+
+//#region RULZ VARIABLES
+
+//#endregion RULZ VARIABLES
+const rulesButton = document.getElementById("rulzButton");
+const rulesModal = document.getElementById("rulzModal");
+const closeButton = document.querySelector(".close-button");
 //#endregion VARIABLES
 
 //#region MATTER AND SOCKET SETUP
@@ -405,6 +415,16 @@ document.getElementById("moveButton").addEventListener("click", function () {
 document.getElementById("shootButton").addEventListener("click", function () {
   actionMode = "shoot";
 });
+
+rulesButton.addEventListener("click", openModal);
+closeButton.addEventListener("click", closeModal);
+
+window.addEventListener("click", function (event) {
+  if (event.target === rulesModal) {
+    closeModal();
+  }
+});
+
 //#endregion BUTTON EVENT HANDLERS
 
 //#region COLLISION HANDLERS
@@ -516,9 +536,6 @@ World.add(world, turrets);
 //#region MOUSE EVENTS
 
 Events.on(mouseConstraint, "mousedown", function (event) {
-  if (currentGameState === GameState.TUTORIAL) {
-    //teach stuff
-  }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
     startDrawing(event);
@@ -535,9 +552,6 @@ Events.on(mouseConstraint, "mousedown", function (event) {
 });
 
 Events.on(mouseConstraint, "mousemove", function (event) {
-  if (currentGameState === GameState.TUTORIAL) {
-    //teach stuff
-  }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
     draw(event);
@@ -552,9 +566,6 @@ Events.on(mouseConstraint, "mousemove", function (event) {
 });
 
 Events.on(mouseConstraint, "mouseup", function (event) {
-  if (currentGameState === GameState.TUTORIAL) {
-    //teach stuff
-  }
   if (currentGameState === GameState.PRE_GAME) {
     //draw stuff
     endDrawing(event);
@@ -600,7 +611,7 @@ function endTurn() {
 }
 
 function updateTurnTimerDisplay() {
-  const timerElement = document.getElementById("turnTimer");
+  const timerElement = document.getElementById("Timer");
   timerElement.textContent = `${turnTimeLeft}`;
 }
 
@@ -1232,6 +1243,17 @@ function checkAllTanksDestroyed() {
   }
 }
 //#endregion WIN OR LOSE FUNCTIONS
+
+//#region RULZ FUNCTIONS
+function openModal() {
+  rulesModal.style.display = "block";
+}
+
+// Function to Close Modal
+function closeModal() {
+  rulesModal.style.display = "none";
+}
+//#endregion RULZ FUNCTIONS
 
 //#endregion FUNCTIONS
 
