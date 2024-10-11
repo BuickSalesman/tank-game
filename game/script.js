@@ -331,6 +331,8 @@ Runner.run(runner, engine);
 //Add the ability for mouse input into the physics world.
 World.add(world, mouseConstraint);
 
+startDrawTimer();
+
 //#endregion MATTER AND SOCKET SETUP
 
 //#region EVENT HANDLERS
@@ -422,6 +424,14 @@ closeButton.addEventListener("click", closeModal);
 window.addEventListener("click", function (event) {
   if (event.target === rulesModal) {
     closeModal();
+  }
+});
+
+document.getElementById("endDrawButton").addEventListener("click", function () {
+  if (currentGameState === GameState.PRE_GAME) {
+    clearInterval(drawTimerInterval);
+    drawTimerInterval = null;
+    endDrawPhase();
   }
 });
 
@@ -585,6 +595,47 @@ Events.on(mouseConstraint, "mouseup", function (event) {
 //#region FUNCTIONS
 
 //#region TURN AND TIMER FUNCTIONS
+// Function to start the draw timer
+function startDrawTimer() {
+  drawTimeLeft = 20; // Reset to desired draw phase duration
+  updateDrawTimerDisplay();
+
+  drawTimerInterval = setInterval(() => {
+    drawTimeLeft--;
+    updateDrawTimerDisplay();
+
+    if (drawTimeLeft <= 0) {
+      clearInterval(drawTimerInterval);
+      endDrawPhase();
+    }
+  }, 1000); // Update every second
+}
+
+function updateDrawTimerDisplay() {
+  if (drawTimerDisplay) {
+    drawTimerDisplay.textContent = `${drawTimeLeft}`;
+  }
+}
+
+function endDrawPhase() {
+  clearInterval(drawTimerInterval);
+  drawTimerInterval = null;
+  currentGameState = GameState.GAME_RUNNING;
+  createBodiesFromShapes();
+  removeFortressNoDrawZones();
+  setTimeout(() => {
+    coinFlip();
+  }, 500);
+  startTurnTimer();
+}
+
+// Initialize the draw timer  game starts
+function initializeDrawPhase() {
+  if ((currentGameState = GameState.PRE_GAME)) {
+    startDrawTimer();
+  }
+}
+
 function startTurnTimer() {
   hasMovedOrShotThisTurn = false;
   turnTimeLeft = 46; // Reset turn time
@@ -669,19 +720,6 @@ function drawNoDrawZones() {
 }
 
 function removeFortressNoDrawZones() {
-  // Assuming you have stored fortress noDrawZones separately when you added them
-  // Let's modify the fortressNoDrawZone function to store fortress zones separately
-  // If you haven't done this yet, you need to adjust the fortressNoDrawZone function first
-
-  // Remove fortress noDrawZones from the noDrawZones array
-  noDrawZones.forEach((zone) => {
-    const index = noDrawZones.indexOf(zone);
-    if (index !== -1) {
-      noDrawZones.splice(index, 1);
-    }
-  });
-
-  // Clear the fortressNoDrawZones array
   noDrawZones = [];
 }
 //#endregion NODRAWZONE FUNCTIONS
@@ -705,6 +743,9 @@ function drawDividingLine() {
 }
 
 function startDrawing() {
+  if (currentGameState !== GameState.PRE_GAME) {
+    return;
+  }
   const mousePosition = mouseConstraint.mouse.position;
 
   // Enforce drawing area per player
@@ -876,6 +917,8 @@ function endDrawing() {
           setTimeout(() => {
             coinFlip();
           }, 500);
+          clearInterval(drawTimerInterval);
+          drawTimerInterval = null;
           startTurnTimer();
         }
       }
