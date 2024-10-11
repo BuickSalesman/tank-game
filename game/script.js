@@ -431,6 +431,7 @@ document.getElementById("endDrawButton").addEventListener("click", function () {
   if (currentGameState === GameState.PRE_GAME) {
     clearInterval(drawTimerInterval);
     drawTimerInterval = null;
+    noDrawZones = [];
     endDrawPhase();
   }
 });
@@ -597,7 +598,7 @@ Events.on(mouseConstraint, "mouseup", function (event) {
 //#region TURN AND TIMER FUNCTIONS
 // Function to start the draw timer
 function startDrawTimer() {
-  drawTimeLeft = 20; // Reset to desired draw phase duration
+  drawTimeLeft = 75; // Reset to desired draw phase duration
   updateDrawTimerDisplay();
 
   drawTimerInterval = setInterval(() => {
@@ -774,6 +775,9 @@ function startDrawing() {
 }
 
 function draw() {
+  if (currentGameState !== GameState.PRE_GAME) {
+    return;
+  }
   const mousePosition = mouseConstraint.mouse.position;
 
   if (!isDrawing) return;
@@ -946,8 +950,9 @@ function redrawAllShapes() {
       drawCtx.stroke();
     }
   }
-
-  drawNoDrawZones();
+  if (currentGameState === GameState.PRE_GAME) {
+    drawNoDrawZones();
+  }
 }
 
 function createBodiesFromShapes() {
