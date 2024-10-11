@@ -432,10 +432,22 @@ window.addEventListener("click", function (event) {
 
 document.getElementById("endDrawButton").addEventListener("click", function () {
   if (currentGameState === GameState.PRE_GAME) {
-    clearInterval(drawTimerInterval);
-    drawTimerInterval = null;
-    noDrawZones = [];
-    endDrawPhase();
+    // Check if the current player is PLAYER_ONE and their shape count is less than 5
+    if (currentPlayerDrawing === PLAYER_ONE && shapeCountPlayer1 < 5) {
+      shapeCountPlayer1 = 5; // Set Player 1's shape count to 5
+      currentPlayerDrawing = PLAYER_TWO; // Switch to Player 2
+    }
+    // Check if the current player is PLAYER_TWO and their shape count is less than 5
+    else if (currentPlayerDrawing === PLAYER_TWO && shapeCountPlayer2 < 5) {
+      shapeCountPlayer2 = 5; // Set Player 2's shape count to 5
+    }
+
+    // If both players have drawn 5 shapes, end the draw phase
+    if (shapeCountPlayer1 === 5 && shapeCountPlayer2 === 5) {
+      clearInterval(drawTimerInterval);
+      drawTimerInterval = null;
+      endDrawPhase();
+    }
   }
 });
 
