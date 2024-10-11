@@ -254,7 +254,6 @@ const dividingLineMargin = tankSize + height * 0.005;
 
 let totalInkUsed = 0;
 const maxInkPerShape = baseHeight * 0.6;
-console.log(maxInkPerShape);
 
 let isDrawingBelow = true;
 let isDrawing = false;
@@ -280,6 +279,8 @@ let isMouseDown = false;
 let isMouseMoving = false;
 let startingMousePosition = null;
 let endingMousePosition = null;
+
+let lastPlayerToIncreasePower = null;
 
 //#region WOBBLE
 
@@ -399,12 +400,10 @@ Events.on(engine, "afterUpdate", function () {
 //#region BUTTON EVENT HANDLERS
 document.getElementById("moveButton").addEventListener("click", function () {
   actionMode = "move";
-  console.log(actionMode);
 });
 
 document.getElementById("shootButton").addEventListener("click", function () {
   actionMode = "shoot";
-  console.log(actionMode);
 });
 //#endregion BUTTON EVENT HANDLERS
 
@@ -424,7 +423,6 @@ Events.on(engine, "collisionStart", function (event) {
 
     // Check if a tank collided with a shell
     if (bodiesMatch(bodyA, bodyB, "Tank", "Shell")) {
-      console.log("Tank hit by shell!");
       drawExplosion(drawCtx, x, y, 0);
 
       // Identify tank and shell
@@ -433,7 +431,6 @@ Events.on(engine, "collisionStart", function (event) {
 
       // Reduce hit points
       tank.hitPoints -= 1;
-      console.log(`Tank hit points remaining: ${tank.hitPoints}`);
 
       // Remove shell from the world
       World.remove(engine.world, shell);
@@ -441,7 +438,6 @@ Events.on(engine, "collisionStart", function (event) {
       // Check if tank is destroyed
       if (tank.hitPoints <= 0) {
         World.remove(engine.world, tank);
-        console.log("Tank destroyed!");
         drawExplosion(drawCtx, tank.position.x, tank.position.y, 0);
 
         // Call the function to check if all tanks of a player are destroyed
@@ -454,7 +450,6 @@ Events.on(engine, "collisionStart", function (event) {
 
     // Check if a shell collided with a reactor
     if (bodiesMatch(bodyA, bodyB, "Shell", "Reactor")) {
-      console.log("Shell hit a reactor!");
       drawExplosion(drawCtx, x, y, 0);
 
       // Identify reactor and shell
@@ -463,7 +458,6 @@ Events.on(engine, "collisionStart", function (event) {
 
       // Reduce hit points
       reactor.hitPoints -= 1;
-      console.log(`Reactor hit points remaining: ${reactor.hitPoints}`);
 
       // Remove shell from the world
       World.remove(engine.world, shell);
@@ -910,6 +904,7 @@ function createBodiesFromShapes() {
       for (const point of points) {
         const circle = Bodies.circle(point.x, point.y, circleRadius, {
           isStatic: true,
+          label: "Shape",
           render: { fillStyle: "black" },
           collisionFilter: {
             group: 0,
@@ -1044,7 +1039,7 @@ function increasePower() {
   if (!actionMode) {
     return;
   } else if (powerLevel < maxPowerLevel) {
-    powerLevel += 5;
+    powerLevel += 4;
     powerLevel = Math.min(powerLevel, 100); //Ensure power meter does not exceed 100.
     powerMeterFill.style.height = `${powerLevel}%`;
 
@@ -1124,18 +1119,31 @@ function releaseAndApplyForce(endingMousePosition) {
       const scaledPowerLevel = Math.pow(powerLevel, 1.5);
       const forceMagnitude = scaledPowerLevel * forceScalingFactor * 0.1;
 
+      // Apply punishment or reward based on powerLevel
+      let adjustmentPercentage = 0;
+
+      if (powerLevel > 95) {
+        adjustmentPercentage = -5 * (powerLevel - 95);
+      } else if (powerLevel >= 85 && powerLevel <= 95) {
+        adjustmentPercentage = 5 * (powerLevel - 85);
+      }
+
+      // Apply adjustment to forceMagnitude
+      const adjustedForceMagnitude = forceMagnitude * (1 + adjustmentPercentage / 100);
+
       if (actionMode === "move") {
+        console.log(adjustedForceMagnitude);
         if (selectedUnit.fixedConstraint) {
           World.remove(engine.world, selectedUnit.fixedConstraint);
           selectedUnit.fixedConstraint = null;
         }
         Body.applyForce(selectedUnit, selectedUnit.position, {
-          x: -normalizedVector.x * forceMagnitude, // scale force in x direction.
-          y: -normalizedVector.y * forceMagnitude, // scale force in y direction.
+          x: -normalizedVector.x * adjustedForceMagnitude, // scale force in x direction.
+          y: -normalizedVector.y * adjustedForceMagnitude, // scale force in y direction.
         });
         actionTaken = true;
       } else if (actionMode === "shoot") {
-        console.log(forceMagnitude);
+        console.log(adjustedForceMagnitude);
         const shellSize = 5; // Adjust as needed
 
         //Position the shell at the front of the tank.
@@ -1145,8 +1153,8 @@ function releaseAndApplyForce(endingMousePosition) {
         const shellY = selectedUnit.position.y - normalizedVector.y * shellOffset;
 
         const initialVelocity = {
-          x: -normalizedVector.x * forceMagnitude * 3, // Adjust multiplier as needed
-          y: -normalizedVector.y * forceMagnitude * 3, // Adjust multiplier as needed
+          x: -normalizedVector.x * adjustedForceMagnitude * 3, // Adjust multiplier as needed
+          y: -normalizedVector.y * adjustedForceMagnitude * 3, // Adjust multiplier as needed
         };
 
         let playerId;
@@ -1166,7 +1174,6 @@ function releaseAndApplyForce(endingMousePosition) {
 
         //Add shell to the world.
         World.add(world, shell);
-        console.log(shell.playerId);
         actionTaken = true;
       }
     }

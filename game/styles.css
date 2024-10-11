@@ -64,18 +64,43 @@ body {
 }
 
 #powerMeterContainer {
+  position: relative; /* Add this if not already present */
   display: flex;
   align-items: flex-end;
   width: 3rem;
   height: 60vh;
   border: 2px solid #000;
-  margin-bottom: 1rem; /* Space between power meter and buttons */
+  margin-bottom: 1rem;
+  overflow: hidden; /* Ensure child elements are contained */
 }
 
 #powerMeterFill {
+  position: absolute;
+  bottom: 0;
   width: 100%;
   background-color: red;
   height: 0%; /* Initial height of the power meter fill */
+  z-index: 1; /* Ensure it appears below the zones */
+}
+
+/* Reward Zone Style */
+#rewardZone {
+  position: absolute;
+  bottom: 85%; /* Start at 90% from the bottom */
+  width: 100%;
+  height: 10%; /* Covers 5% height (90% to 95%) */
+  background-color: rgba(0, 255, 0, 0.5); /* Semi-transparent green */
+  z-index: 2;
+}
+
+/* Punishment Zone Style */
+#punishmentZone {
+  position: absolute;
+  bottom: 95%; /* Start at 95% from the bottom */
+  width: 100%;
+  height: 5%; /* Covers 5% height (95% to 100%) */
+  background-color: rgba(255, 0, 0, 0.5); /* Semi-transparent red */
+  z-index: 2;
 }
 
 .button-container {
