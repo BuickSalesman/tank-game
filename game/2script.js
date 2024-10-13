@@ -37,26 +37,29 @@ const shootButton = document.getElementById("shootButton");
 // Declare the rules button.
 const rulesButton = document.getElementById("rulzButton");
 
-// Declare the rules modal.
-const rulesModal = document.getElementById("rulzModal");
-
 // Declare the close button within the rules modal.
 const closeButton = document.querySelector(".close-button");
+
+// Declare the rules modal.
+const rulesModal = document.getElementById("rulesModal");
+
+//Declare the end drawing button.
+const endDrawButton = document.getElementById("endDrawButton");
 
 // Declare the timer display.
 const drawTimerDisplay = document.getElementById("Timer");
 
 //#endregion HTML ELEMENT VARIABLES
 
-// Set up gameContainer dimensions.
-gameContainer.style.width = `${width}px`;
-gameContainer.style.height = `${height}px`;
-
 // Declare height, width, and aspect ratio for the canvas.
 const aspectRatio = 1 / 1.4142;
 const baseHeight = Math.min(window.innerHeight * 0.95);
 const width = baseHeight * aspectRatio;
 const height = baseHeight;
+
+// Set up gameContainer dimensions.
+gameContainer.style.width = `${width}px`;
+gameContainer.style.height = `${height}px`;
 
 // Declare contexts for both canvases.
 const drawCtx = drawCanvas.getContext("2d");
@@ -508,9 +511,181 @@ window.addEventListener("click", function (event) {
   }
 });
 
+endDrawButton.addEventListener("click", function () {
+  // Exit if not in PRE_GAME state
+  if (currentGameState !== GameState.PRE_GAME) {
+    return;
+  }
+
+  if (isPlayerDrawComplete(currentPlayerDrawing)) {
+    switchPlayer();
+  }
+
+  if (areBothPlayersDoneDrawing()) {
+    finalizeDrawingPhase();
+  }
+});
+
 //#endregion BUTTON EVENT HANDLERS
 
+//#region COLLISION HANDLER
+Events.on(engine, "collisionStart", function (event) {
+  var pairs = event.pairs;
+
+  pairs.forEach((pair) => {
+    const { bodyA, bodyB } = pair;
+    const x = (bodyA.position.x + bodyB.position.x) / 2;
+    const y = (bodyA.position.y + bodyB.position.y) / 2;
+
+    // Check if a tank collided with a shell
+    if (bodiesMatch(bodyA, bodyB, "Tank", "Shell")) {
+      const tank = bodyA.label === "Tank" ? bodyA : bodyB;
+      const shell = bodyA.label === "Shell" ? bodyA : bodyB;
+      handleTankDestruction(tank, shell, engine, drawCtx);
+    }
+
+    // Check if a shell collided with a reactor
+    if (bodiesMatch(bodyA, bodyB, "Shell", "Reactor")) {
+      const reactor = bodyA.label === "Reactor" ? bodyA : bodyB;
+      const shell = bodyA.label === "Shell" ? bodyA : bodyB;
+      handleReactorDestruction(reactor, shell, engine, drawCtx);
+    }
+
+    // Remove the shell if it hits a shape
+    if (bodiesMatch(bodyA, bodyB, "Shell", "Shape")) {
+      const shell = bodyA.label === "Shell" ? bodyA : bodyB;
+      World.remove(engine.world, shell);
+    }
+  });
+});
+//#endregion COLLISION HANDLER
+
 //#endregion EVENT HANDLERS
+
+//#region MOUSE EVENTS
+
+Events.on(mouseConstraint, "mousedown", function (event) {
+  if (currentGameState === GameState.PRE_GAME) {
+    //draw stuff
+    startDrawing(event);
+  }
+  if (currentGameState === GameState.GAME_RUNNING) {
+    //shoot stuff
+    isMouseMoving = false;
+
+    saveClickPoint(event);
+  }
+  if (currentGameState === GameState.POST_GAME) {
+    //restart stuff
+  }
+});
+
+Events.on(mouseConstraint, "mousemove", function (event) {
+  if (currentGameState === GameState.PRE_GAME) {
+    //draw stuff
+    draw(event);
+  }
+  if (currentGameState === GameState.GAME_RUNNING) {
+    isMouseMoving = true;
+    //shoot stuff
+  }
+  if (currentGameState === GameState.POST_GAME) {
+    //restart stuff
+  }
+});
+
+Events.on(mouseConstraint, "mouseup", function (event) {
+  if (currentGameState === GameState.PRE_GAME) {
+    //draw stuff
+    endDrawing(event);
+  }
+  if (currentGameState === GameState.GAME_RUNNING) {
+    //shoot stuff
+    const endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y };
+    releaseAndApplyForce(endingMousePosition);
+  }
+  if (currentGameState === GameState.POST_GAME) {
+    //restart stuff
+  }
+});
+
+//#endregion MOUSE EVENTS
+
+//#region FUNCTIONS
+
+//#region TURN AND TIMER FUNCTIONS
+// Function to start the draw timer
+function startDrawTimer() {
+  drawTimeLeft = 75; // Reset to desired draw phase duration
+  updateDrawTimerDisplay();
+
+  drawTimerInterval = setInterval(() => {
+    drawTimeLeft--;
+    updateDrawTimerDisplay();
+
+    if (drawTimeLeft <= 0) {
+      clearInterval(drawTimerInterval);
+      endDrawPhase();
+    }
+  }, 1000); // Update every second
+}
+
+function updateDrawTimerDisplay() {
+  if (drawTimerDisplay) {
+    drawTimerDisplay.textContent = `${drawTimeLeft}`;
+  }
+}
+
+function endDrawPhase() {
+  clearInterval(drawTimerInterval);
+  drawTimerInterval = null;
+  currentGameState = GameState.GAME_RUNNING;
+  createBodiesFromShapes();
+  removeFortressNoDrawZones();
+  setTimeout(() => {
+    coinFlip();
+  }, 500);
+  startTurnTimer();
+}
+
+// Initialize the draw timer  game starts
+function initializeDrawPhase() {
+  if ((currentGameState = GameState.PRE_GAME)) {
+    startDrawTimer();
+  }
+}
+
+function startTurnTimer() {
+  hasMovedOrShotThisTurn = false;
+  turnTimeLeft = 46; // Reset turn time
+  if (turnTimerInterval) {
+    clearInterval(turnTimerInterval);
+  }
+  turnTimerInterval = setInterval(() => {
+    turnTimeLeft--;
+    updateTurnTimerDisplay(); // Update UI
+    if (turnTimeLeft <= 0) {
+      clearInterval(turnTimerInterval);
+      endTurn();
+    }
+  }, 1000); // Update every second
+}
+
+function endTurn() {
+  if (turnTimerInterval) {
+    clearInterval(turnTimerInterval);
+    turnTimerInterval = null;
+  }
+  currentPlayerTurn = currentPlayerTurn === PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
+  startTurnTimer();
+}
+
+function updateTurnTimerDisplay() {
+  const timerElement = document.getElementById("Timer");
+  timerElement.textContent = `${turnTimeLeft}`;
+}
+
+//#endregion TURN AND TIMER FUNCTIONS
 
 //#region BEFORE UPDATE HELPER FUNCTIONS
 
@@ -563,3 +738,114 @@ function handleShellResting() {
 }
 
 //#endregion AFTER UPDATE HELPER FUNCTIONS
+
+//#region END DRAW BUTTON HELPER FUNCTIONS
+function isPlayerDrawComplete(player) {
+  if (player === PLAYER_ONE && shapeCountPlayer1 < maxShapeCountPlayer1) {
+    shapeCountPlayer1 = maxShapeCountPlayer1;
+    return true;
+  } else if (player === PLAYER_TWO && shapeCountPlayer2 < maxShapeCountPlayer2) {
+    shapeCountPlayer2 = maxShapeCountPlayer2;
+    return true;
+  }
+  return false;
+}
+
+function switchPlayer() {
+  currentPlayerDrawing = currentPlayerDrawing === PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
+}
+
+function areBothPlayersDoneDrawing() {
+  return shapeCountPlayer1 === maxShapeCountPlayer1 && shapeCountPlayer2 === maxShapeCountPlayer2;
+}
+
+function finalizeDrawingPhase() {
+  clearInterval(drawTimerInterval);
+  drawTimerInterval = null;
+  endDrawPhase();
+}
+
+function endDrawPhase() {
+  currentGameState = GameState.GAME_RUNNING;
+  createBodiesFromShapes();
+  removeFortressNoDrawZones();
+  setTimeout(() => coinFlip(), 500);
+  startTurnTimer();
+}
+
+//#endregion END DRAW BUTTON HELPER FUNCTIONS
+
+//#region COLLISION HANDLER HELPER FUNCTIONS
+
+function bodiesMatch(bodyA, bodyB, label1, label2) {
+  return (bodyA.label === label1 && bodyB.label === label2) || (bodyA.label === label2 && bodyB.label === label1);
+}
+
+// Helper function to handle explosions
+function handleExplosion(context, x, y, frame) {
+  drawExplosion(context, x, y, frame);
+}
+
+// Helper function to reduce hit points and remove the body if destroyed
+function reduceHitPoints(body, engine, removalCallback) {
+  body.hitPoints -= 1;
+  if (body.hitPoints <= 0) {
+    World.remove(engine.world, body);
+    removalCallback();
+  } else {
+    // Optionally, update body appearance to indicate damage
+    body.render.strokeStyle = "orange"; // Change color to indicate damage
+  }
+}
+
+// Helper function to handle tank destruction
+function handleTankDestruction(tank, shell, engine, context) {
+  handleExplosion(context, tank.position.x, tank.position.y, 0);
+  World.remove(engine.world, shell);
+
+  reduceHitPoints(tank, engine, () => {
+    handleExplosion(context, tank.position.x, tank.position.y, 0);
+    checkAllTanksDestroyed();
+  });
+}
+
+// Helper function to handle reactor destruction
+function handleReactorDestruction(reactor, shell, engine, context) {
+  handleExplosion(context, reactor.position.x, reactor.position.y, 0);
+  World.remove(engine.world, shell);
+
+  reduceHitPoints(reactor, engine, () => {
+    handleExplosion(context, reactor.position.x, reactor.position.y, 0);
+    declareReactorWinner(reactor.playerId);
+  });
+}
+
+// Declare the winner based on reactor destruction
+function declareReactorWinner(losingPlayerId) {
+  const winningPlayerId = losingPlayerId === PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
+  setTimeout(() => {
+    alert(`Player ${winningPlayerId} wins! Dismiss this to replay.`);
+    location.reload();
+  }, 1000);
+}
+
+// Function to check if all tanks of a player are destroyed
+function checkAllTanksDestroyed() {
+  const player1TanksDestroyed = tank1.hitPoints <= 0 && tank2.hitPoints <= 0;
+  const player2TanksDestroyed = tank3.hitPoints <= 0 && tank4.hitPoints <= 0;
+
+  if (player1TanksDestroyed) {
+    setTimeout(() => {
+      alert("Player 2 wins! Dismiss this to replay.");
+      location.reload(); // Refresh the page to restart the game
+    }, 1000);
+  } else if (player2TanksDestroyed) {
+    setTimeout(() => {
+      alert("Player 1 wins! Dismiss this to replay.");
+      location.reload(); // Refresh the page to restart the game
+    }, 1000);
+  }
+}
+
+//#endregion COLLISION HANDLER HELPER FUNCTIONS
+//#endregion FUNCTIONS

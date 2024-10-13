@@ -1,50 +1,4 @@
-//#region VARIABLES
-
-//#region EXPLOSIONS!!!!
-const explosionFrames = [];
-
-//REFACTOR
-for (let i = 1; i <= 25; i++) {
-  const img = new Image();
-  img.src = `assets/EXPLOSION/explosion4/${i}.png`; // Change this path to your actual explosion images
-  explosionFrames.push(img);
-}
-//#endregion EXPLOSIONS!!!!
-
-//#endregion VARIABLES
-
-//#region MATTER AND SOCKET SETUP
-
-//REFACTOR
-
 //#endregion MATTER AND SOCKET SETUP
-
-//#region EVENT HANDLERS
-
-//#region BUTTON EVENT HANDLERS
-
-document.getElementById("endDrawButton").addEventListener("click", function () {
-  if (currentGameState === GameState.PRE_GAME) {
-    // Check if the current player is PLAYER_ONE and their shape count is less than 5
-    if (currentPlayerDrawing === PLAYER_ONE && shapeCountPlayer1 < 5) {
-      shapeCountPlayer1 = 5; // Set Player 1's shape count to 5
-      currentPlayerDrawing = PLAYER_TWO; // Switch to Player 2
-    }
-    // Check if the current player is PLAYER_TWO and their shape count is less than 5
-    else if (currentPlayerDrawing === PLAYER_TWO && shapeCountPlayer2 < 5) {
-      shapeCountPlayer2 = 5; // Set Player 2's shape count to 5
-    }
-
-    // If both players have drawn 5 shapes, end the draw phase
-    if (shapeCountPlayer1 === 5 && shapeCountPlayer2 === 5) {
-      clearInterval(drawTimerInterval);
-      drawTimerInterval = null;
-      endDrawPhase();
-    }
-  }
-});
-
-//#endregion BUTTON EVENT HANDLERS
 
 //#region COLLISION HANDLERS
 Events.on(engine, "collisionStart", function (event) {
@@ -897,6 +851,5 @@ function closeModal() {
 
 //#region BUG LOG
 //Sometimes when shapes are snapped shut, it throws the shapes cannot overlap error.
-//Tanks should not be able to shoot themselves
 //If the power meter is maxed but there is no vector, tank becomes stuck in place and is unmovable (this happened one time, have not been able to duplicate.)
 //#endregion BUG LOG
