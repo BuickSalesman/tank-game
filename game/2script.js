@@ -1097,7 +1097,7 @@ function startDrawing() {
 }
 
 // Handles drawing login during moouse move events.
-function draw() {
+function draw(event) {
   // Exit if the game state is not PRE_GAME.
   if (currentGameState !== GameState.PRE_GAME) {
     return;
@@ -1468,7 +1468,9 @@ function applyWobbleEffect() {
 
 // To increase power meter when called.
 function increasePower() {
-  if (!actionMode || powerLevel >= maxPowerLevel) return;
+  if (!actionMode || powerLevel >= maxPowerLevel) {
+    return;
+  }
 
   powerLevel = Math.min(powerLevel + 3.5, maxPowerLevel);
   powerMeterFill.style.height = `${powerLevel}%`;
@@ -1498,7 +1500,9 @@ function getCurrentMousePosition() {
 function saveClickPoint(event) {
   isMouseMoving = false;
 
-  if (hasMovedOrShotThisTurn) return;
+  if (hasMovedOrShotThisTurn) {
+    return;
+  }
 
   const mousePosition = event.mouse.position;
   const unit = getUnitAtPosition(mousePosition);
@@ -1569,7 +1573,9 @@ function calculateVector(start, end) {
   const deltaY = end.y - start.y;
   const length = Math.hypot(deltaX, deltaY);
 
-  if (length === 0) return null;
+  if (length === 0) {
+    return null;
+  }
 
   return { x: deltaX / length, y: deltaY / length };
 }
