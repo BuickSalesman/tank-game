@@ -396,23 +396,15 @@ let hasMovedOrShotThisTurn = false;
 //#region TIMER CLASS
 
 class Timer {
-  /**
-   * Creates a new Timer instance.
-   * @param {number} duration - The duration of the timer in seconds.
-   * @param {Function} onTick - Callback invoked every second with the remaining time.
-   * @param {Function} onEnd - Callback invoked when the timer reaches zero.
-   */
   constructor(duration, onTick, onEnd) {
-    this.duration = duration;
-    this.timeLeft = duration;
-    this.onTick = onTick;
-    this.onEnd = onEnd;
-    this.intervalId = null;
+    this.duration = duration; // Total duration of the timer in seconds.
+    this.timeLeft = duration; // Remaining time left in the countdown.
+    this.onTick = onTick; // Function to call every second with the remaining time.
+    this.onEnd = onEnd; // Function to call when timer reaches zero.
+    this.intervalId = null; // ID used to clear setInterval.
   }
 
-  /**
-   * Starts the timer.
-   */
+  // Starts timer countdown.
   start() {
     this.timeLeft = this.duration;
     this.onTick(this.timeLeft);
@@ -426,9 +418,7 @@ class Timer {
     }, 1000);
   }
 
-  /**
-   * Stops the timer.
-   */
+  // Stops the tikmer countdown.
   stop() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -436,9 +426,7 @@ class Timer {
     }
   }
 
-  /**
-   * Resets the timer to its initial duration.
-   */
+  // Resets the timer to it's initial duration if it stops running.
   reset() {
     this.stop();
     this.timeLeft = this.duration;
@@ -557,10 +545,10 @@ shootButton.addEventListener("click", function () {
 });
 
 // Open rules modal when rules button is clicked.
-// rulesButton.addEventListener("click", openModal);
+rulesButton.addEventListener("click", openModal);
 
 // Close modal when close button is clicked.
-// closeButton.addEventListener("click", closeModal);
+closeButton.addEventListener("click", closeModal);
 
 // Close modal if user clicks outside the children of the rules modal.
 window.addEventListener("click", function (event) {
@@ -671,69 +659,84 @@ Events.on(mouseConstraint, "mouseup", function (event) {
 
 //#region FUNCTIONS
 
+//#region MODAL HELPER FUNCTIONS
+function openModal() {
+  rulesModal.style.display = "block";
+}
+
+// Function to Close Modal
+function closeModal() {
+  rulesModal.style.display = "none";
+}
+//#endregion MODAL HELPER FUNCTIONS
+
 //#region TURN AND TIMER FUNCTIONS
 
-/**
- * Initializes and starts the draw phase timer.
- */
+// Initializes draw phase timer.
 function initializeDrawPhase() {
   if (currentGameState === GameState.PRE_GAME) {
-    // Fixed comparison
     drawTimer = new Timer(DRAW_PHASE_DURATION, updateDrawTimerDisplay, endDrawPhase);
     drawTimer.start();
   }
 }
 
-/**
- * Initializes and starts the turn timer.
- */
+// Initializes and starts the turn timer.
 function startTurnTimer() {
   hasMovedOrShotThisTurn = false;
   turnTimer = new Timer(TURN_PHASE_DURATION, updateTurnTimerDisplay, endTurn);
   turnTimer.start();
 }
 
-/**
- * Updates the draw timer display.
- * @param {number} timeLeft - The remaining time in seconds.
- */
+// Updates the draw timer display.
 function updateDrawTimerDisplay(timeLeft) {
   if (timerElement) {
     timerElement.textContent = `${timeLeft}`;
   }
 }
 
-/**
- * Updates the turn timer display.
- * @param {number} timeLeft - The remaining time in seconds.
- */
+// Updates the turn timer display.
 function updateTurnTimerDisplay(timeLeft) {
   if (timerElement) {
     timerElement.textContent = `${timeLeft}`;
   }
 }
 
-/**
- * Ends the current turn and switches to the next player.
- */
+// Ends the current turn and switches to the next players turn.
 function endTurn() {
   currentPlayerTurn = currentPlayerTurn === PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
   startTurnTimer();
 }
 
-/**
- * Finalizes the drawing phase after both players are done.
- */
+// Finalizes drawing phase and transitions to the next game state.
+function finalizeDrawingPhase() {
+  if (drawTimer) {
+    drawTimer.stop();
+    drawTimer = null;
+  }
+  // Changes game state, creates Matter bodies from drawn shapes, flips a coin for who goes first, starts the turn timer.
+  endDrawPhase();
+}
 
 //#endregion TURN AND TIMER FUNCTIONS
+
+//#region COIN FLIP FUNCTIONS
+function coinFlip() {
+  // Randomly decide which player goes first.
+  const result = Math.random() < 0.5 ? PLAYER_ONE : PLAYER_TWO;
+
+  // Set the current player's turn based on the coin flip result.
+  currentPlayerTurn = result;
+
+  // Display the result in the console or on the UI.
+  alert(`Player ${currentPlayerTurn} wins the coin flip and goes first!`);
+}
+//#endregion COIN FLIP FUNCTIONS
 
 //#region DRAWING FUNCTIONS
 
 //#region NO-DRAW ZONES FUNCTIONS
 
-/**
- * Creates no-draw zones around fortresses to prevent overlapping drawings.
- */
+// Creates no-draw zones around fortresses to prevent overlapping drawings.
 function fortressNoDrawZone() {
   fortresses.forEach((fortress) => {
     const zone = createRectangularZone(
@@ -747,15 +750,7 @@ function fortressNoDrawZone() {
   });
 }
 
-/**
- * Creates a rectangular no-draw zone with padding.
- * @param {number} centerX - X-coordinate of the center.
- * @param {number} centerY - Y-coordinate of the center.
- * @param {number} width - Width of the fortress.
- * @param {number} height - Height of the fortress.
- * @param {number} padding - Additional padding around the fortress.
- * @returns {Array} Array of points defining the rectangle.
- */
+// Creates a rectangular no-drawn-zone with padding.
 function createRectangularZone(centerX, centerY, width, height, padding) {
   const halfWidth = width / 2 + padding;
   const halfHeight = height / 2 + padding;
@@ -768,9 +763,7 @@ function createRectangularZone(centerX, centerY, width, height, padding) {
   ];
 }
 
-/**
- * Draws all no-draw zones on the canvas.
- */
+// Draw all no draw zones on the drawing canvas.
 function drawNoDrawZones() {
   drawCtx.strokeStyle = "red";
   drawCtx.lineWidth = 2;
@@ -783,21 +776,19 @@ function drawNoDrawZones() {
     drawCtx.closePath();
     drawCtx.stroke();
 
-    // Draw the X inside the rectangle
+    // Draw the X inside the rectangle.
     drawCtx.beginPath();
-    // Diagonal from Top-Left to Bottom-Right
+    // Diagonal from Top-Left to Bottom-Right.
     drawCtx.moveTo(zone[0].x, zone[0].y);
     drawCtx.lineTo(zone[2].x, zone[2].y);
-    // Diagonal from Top-Right to Bottom-Left
+    // Diagonal from Top-Right to Bottom-Left.
     drawCtx.moveTo(zone[1].x, zone[1].y);
     drawCtx.lineTo(zone[3].x, zone[3].y);
     drawCtx.stroke();
   });
 }
 
-/**
- * Clears all no-draw zones from the canvas.
- */
+// Clears any no draw zones from the drawing canvas.
 function removeFortressNoDrawZones() {
   drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
   noDrawZones = [];
@@ -805,15 +796,9 @@ function removeFortressNoDrawZones() {
 
 //#endregion NO-DRAW ZONES FUNCTIONS
 
-//#region EXPLOSION FUNCTIONS
+//#region EXPLOSION!!! FUNCTIONS
 
-/**
- * Draws an explosion animation at the specified coordinates.
- * @param {CanvasRenderingContext2D} context - The drawing context.
- * @param {number} x - X-coordinate of the explosion center.
- * @param {number} y - Y-coordinate of the explosion center.
- * @param {number} frame - Current frame index.
- */
+// Draws an explosion animation at the specified coordinates.
 function handleExplosion(context, x, y, frame = 0) {
   if (frame < explosionFrames.length) {
     context.clearRect(x - 50, y - 50, 100, 100);
@@ -822,13 +807,11 @@ function handleExplosion(context, x, y, frame = 0) {
   }
 }
 
-//#endregion EXPLOSION FUNCTIONS
+//#endregion EXPLOSION!!! FUNCTIONS
 
 //#region DIVIDING LINE FUNCTIONS
 
-/**
- * Draws the dividing line on the canvas.
- */
+// Draws the dividing line on the canvas.
 function drawDividingLine() {
   drawCtx.beginPath();
   drawCtx.moveTo(0, dividingLine);
@@ -842,9 +825,7 @@ function drawDividingLine() {
 
 //#region SHAPE DRAWING FUNCTIONS
 
-/**
- * Redraws all existing shapes on the canvas.
- */
+// Redraws all existing shapes on the draw canvas.
 function redrawAllShapes() {
   allPaths.forEach((path) => {
     if (path.length > 0) {
@@ -866,14 +847,7 @@ function redrawAllShapes() {
   }
 }
 
-/**
- * Generates all points along a line using linear interpolation.
- * @param {number} x0 - Starting x-coordinate.
- * @param {number} y0 - Starting y-coordinate.
- * @param {number} x1 - Ending x-coordinate.
- * @param {number} y1 - Ending y-coordinate.
- * @returns {Object[]} Array of points along the line.
- */
+// Generates an array of points along a line.
 function getLinePoints(x0, y0, x1, y1) {
   const points = [];
 
@@ -906,14 +880,9 @@ function getLinePoints(x0, y0, x1, y1) {
   return points;
 }
 
-/**
- * Checks if two polygons overlap.
- * @param {Object[]} polygonA - First polygon defined by an array of points.
- * @param {Object[]} polygonB - Second polygon defined by an array of points.
- * @returns {boolean} True if polygons overlap, else false.
- */
+// Checks if two polygons overlap, return boolean.
 function polygonsOverlap(polygonA, polygonB) {
-  // Check if any edges of polygonA intersect with any edges of polygonB
+  // Check if any edges of polygonA intersect with any edges of polygonB.
   for (let i = 0; i < polygonA.length; i++) {
     const a1 = polygonA[i];
     const a2 = polygonA[(i + 1) % polygonA.length];
@@ -928,22 +897,15 @@ function polygonsOverlap(polygonA, polygonB) {
     }
   }
 
-  // Additionally, check if one polygon is completely inside another
+  // Check if one polygon is completely inside another.
   if (isPointInPolygon(polygonA[0], polygonB) || isPointInPolygon(polygonB[0], polygonA)) {
     return true;
   }
 
-  return false; // Polygons do not overlap
+  return false; // Polygons do not overlap.
 }
 
-/**
- * Determines if two line segments intersect.
- * @param {Object} p0 - Start point of first line segment.
- * @param {Object} p1 - End point of first line segment.
- * @param {Object} p2 - Start point of second line segment.
- * @param {Object} p3 - End point of second line segment.
- * @returns {boolean} True if segments intersect, else false.
- */
+// Determines if two line segments overlap, returns boolean.
 function doLineSegmentsIntersect(p0, p1, p2, p3) {
   const s1X = p1.x - p0.x;
   const s1Y = p1.y - p0.y;
@@ -951,24 +913,19 @@ function doLineSegmentsIntersect(p0, p1, p2, p3) {
   const s2Y = p3.y - p2.y;
 
   const denominator = -s2X * s1Y + s1X * s2Y;
-  if (denominator === 0) return false; // Lines are parallel
+  if (denominator === 0) return false; // Lines are parallel.
 
   const s = (-s1Y * (p0.x - p2.x) + s1X * (p0.y - p2.y)) / denominator;
   const t = (s2X * (p0.y - p2.y) - s2Y * (p0.x - p2.x)) / denominator;
 
   if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
-    return true; // Collision detected
+    return true; // Collision detected.
   }
 
-  return false; // No collision
+  return false; // No collision.
 }
 
-/**
- * Checks if a point is inside a polygon using the ray-casting algorithm.
- * @param {Object} point - The point to check.
- * @param {Object[]} polygon - The polygon defined by an array of points.
- * @returns {boolean} True if the point is inside the polygon, else false.
- */
+// Checks if point is inside of a polygon, using ray-casting algorithm, returns boolean.
 function isPointInPolygon(point, polygon) {
   let collision = false;
 
@@ -989,30 +946,26 @@ function isPointInPolygon(point, polygon) {
   return collision;
 }
 
-/**
- * Redraws all existing shapes and the dividing line on the canvas.
- */
+// Redraws all existing shapes and the dividing line on the draw canvas.
 function redrawCanvas() {
   drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
   drawDividingLine();
   redrawAllShapes();
 }
 
-/**
- * Generates and adds Matter.js bodies from drawn shapes.
- */
+// Matter body from shape generator. Generates a small circle body on top of every point in the lines of a polygon.
 function createBodiesFromShapes() {
   for (let i = 0; i < allPaths.length; i++) {
     const path = allPaths[i];
 
-    // Create circles along the line segments of the path
-    const circleRadius = 2; // Adjust the radius as needed
+    const circleRadius = 2; // 2px radius helps prevent clipping.
 
+    // Create circles along the line segments of the path.
     for (let j = 0; j < path.length - 1; j++) {
       const startPoint = path[j];
       const endPoint = path[j + 1];
 
-      // Use linear interpolation to get every point along the line
+      // Use linear interpolation to get every point along the line.
       const points = getLinePoints(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 
       points.forEach((point) => {
@@ -1033,13 +986,11 @@ function createBodiesFromShapes() {
     }
   }
 
+  // Clear the allPaths array when finished.
   allPaths = [];
 }
 
-/**
- * Handles the drawing logic during mouse move events.
- * @param {MouseEvent} event - The mouse event.
- */
+// Handles drawing login during moouse move events.
 function draw(event) {
   if (currentGameState !== GameState.PRE_GAME) {
     return;
@@ -1048,28 +999,28 @@ function draw(event) {
 
   const mousePosition = { ...mouseConstraint.mouse.position };
 
-  // Enforce drawing area per player
+  // Enforce drawing area per player.
   if (currentPlayerDrawing === PLAYER_ONE) {
     mousePosition.y = Math.max(mousePosition.y, dividingLine + dividingLineMargin);
   } else if (currentPlayerDrawing === PLAYER_TWO) {
     mousePosition.y = Math.min(mousePosition.y, dividingLine - dividingLineMargin);
   }
 
-  // Clamp mouse position within drawable area horizontally
+  // Clamp mouse position within drawable area horizontally.
   mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
 
-  // Clamp mouse position within drawable area vertically
+  // Clamp mouse position within drawable area vertically.
   mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
 
-  // Calculate the length of the new segment
+  // Calculate the length of the new segment.
   const lastPoint = drawingPath[drawingPath.length - 1];
   const dx = mousePosition.x - lastPoint.x;
   const dy = mousePosition.y - lastPoint.y;
   const segmentLength = Math.hypot(dx, dy);
 
-  // Check if adding this segment would exceed max ink
+  // Check if adding this segment would exceed max ink.
   if (totalInkUsed + segmentLength > maxInkPerShape) {
-    // Limit the segment length to the remaining ink
+    // Limit the segment length to the remaining ink.
     const remainingInk = maxInkPerShape - totalInkUsed;
     const ratio = remainingInk / segmentLength;
     if (ratio > 0) {
@@ -1078,27 +1029,27 @@ function draw(event) {
       drawingPath.push({ x: limitedX, y: limitedY });
       totalInkUsed = maxInkPerShape;
     }
-    // Stop drawing
+    // Stop drawing.
     isDrawing = false;
     endDrawing();
     return;
   } else {
-    // Update totalInkUsed and continue drawing
+    // Update totalInkUsed and continue drawing.
     totalInkUsed += segmentLength;
     drawingPath.push(mousePosition);
   }
 
-  // Redraw the canvas
+  // Redraw the canvas.
   redrawCanvas();
 
-  // Draw the current path
+  // Draw the current path.
   drawCtx.beginPath();
   drawCtx.moveTo(drawingPath[0].x, drawingPath[0].y);
   for (let i = 1; i < drawingPath.length; i++) {
     drawCtx.lineTo(drawingPath[i].x, drawingPath[i].y);
   }
 
-  // Optionally change color based on ink usage
+  // Change color based on ink usage.
   const inkUsageRatio = totalInkUsed / maxInkPerShape;
   if (inkUsageRatio > 0.66) {
     drawCtx.strokeStyle = "red";
@@ -1111,11 +1062,9 @@ function draw(event) {
   drawCtx.stroke();
 }
 
-/**
- * Handles the completion of a drawing action.
- */
+// Handles completion of a drawing action.
 function endDrawing() {
-  // End drawing
+  // End drawing.
   isDrawing = false;
 
   if (drawingPath.length > 1) {
@@ -1130,7 +1079,7 @@ function endDrawing() {
       drawingPath.push({ x: firstPoint.x, y: firstPoint.y });
     }
 
-    // Before adding the shape, check for overlaps with existing shapes
+    // Before adding the shape, check for overlaps with existing shapes.
     let overlaps = false;
 
     for (let i = 0; i < allPaths.length; i++) {
@@ -1140,7 +1089,7 @@ function endDrawing() {
       }
     }
 
-    // Check overlap with no-draw zones
+    // Check overlap with no-draw zones.
     if (!overlaps) {
       for (let i = 0; i < noDrawZones.length; i++) {
         if (polygonsOverlap(drawingPath, noDrawZones[i])) {
@@ -1151,46 +1100,44 @@ function endDrawing() {
     }
 
     if (overlaps) {
-      // Optionally alert the user about the invalid shape
+      // Alert the user about the invalid shape
       // alert("Shapes cannot overlap, or be in no draw zones. Try drawing again.");
 
-      // Clear the drawing
+      // Clear the drawing.
       redrawCanvas();
     } else {
-      // Shape is valid, add it to allPaths
+      // Shape is valid, add it to allPaths.
       allPaths.push([...drawingPath]);
 
-      // Increment shape count for current player
+      // Increment shape count for current player.
       if (currentPlayerDrawing === PLAYER_ONE) {
         shapeCountPlayer1++;
         if (shapeCountPlayer1 >= maxShapeCountPlayer1) {
-          // Switch to player 2
+          // Switch to player 2.
           currentPlayerDrawing = PLAYER_TWO;
         }
       } else if (currentPlayerDrawing === PLAYER_TWO) {
         shapeCountPlayer2++;
         if (shapeCountPlayer2 >= maxShapeCountPlayer2) {
-          // Both players have finished drawing
+          // Both players have finished drawing.
           finalizeDrawingPhase();
         }
       }
 
-      // Clear the drawing and re-draw all shapes
+      // Clear the drawing and re-draw all shapes.
       redrawCanvas();
     }
   }
 }
 
-/**
- * Starts the drawing process when the mouse is pressed.
- */
+// Begins drawing process when mouse is pressed.
 function startDrawing() {
   if (currentGameState !== GameState.PRE_GAME) {
     return;
   }
   const mousePosition = { ...mouseConstraint.mouse.position };
 
-  // Enforce drawing area per player
+  // Enforce drawing area per player.
   if (currentPlayerDrawing === PLAYER_ONE) {
     isDrawingBelow = true;
     mousePosition.y = Math.max(mousePosition.y, dividingLine + dividingLineMargin);
@@ -1199,10 +1146,10 @@ function startDrawing() {
     mousePosition.y = Math.min(mousePosition.y, dividingLine - dividingLineMargin);
   }
 
-  // Clamp mouse position within drawable area horizontally
+  // Clamp mouse position within drawable area horizontally.
   mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
 
-  // Clamp mouse position within drawable area vertically
+  // Clamp mouse position within drawable area vertically.
   mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
 
   totalInkUsed = 0;
@@ -1210,36 +1157,20 @@ function startDrawing() {
   drawingPath = [mousePosition];
 }
 
-/**
- * Redraws the dividing line and current drawings after each engine tick.
- */
+// Redraws the dividing line and all shapes after each engine tick.
 function updateAfterRender() {
   // Redraw the dividing line
   drawDividingLine();
 
-  // Redraw all shapes and no-draw zones if in pre-game state
+  // Redraw all shapes and no-draw zones if in pre-game state.
   if (currentGameState === GameState.PRE_GAME) {
     redrawAllShapes();
   }
 }
 
-/**
- * Handles the explosion animation on a specific body.
- * @param {Matter.Body} body - The body where the explosion occurs.
- */
+// EXPLODES!
 function handleBodyExplosion(body) {
   handleExplosion(drawCtx, body.position.x, body.position.y, 0);
-}
-
-/**
- * Finalizes the drawing phase by transitioning the game state.
- */
-function finalizeDrawingPhase() {
-  if (drawTimer) {
-    drawTimer.stop();
-    drawTimer = null;
-  }
-  endDrawPhase();
 }
 
 //#endregion SHAPE DRAWING FUNCTIONS
@@ -1268,7 +1199,7 @@ function endDrawPhase() {
   currentGameState = GameState.GAME_RUNNING;
   createBodiesFromShapes();
   removeFortressNoDrawZones();
-  // setTimeout(() => coinFlip(), 500);
+  setTimeout(() => coinFlip(), 500);
   startTurnTimer();
 }
 
@@ -1332,11 +1263,6 @@ function handleShellResting() {
 
 function bodiesMatch(bodyA, bodyB, label1, label2) {
   return (bodyA.label === label1 && bodyB.label === label2) || (bodyA.label === label2 && bodyB.label === label1);
-}
-
-// Helper function to handle explosions
-function handleExplosion(context, x, y, frame) {
-  drawExplosion(context, x, y, frame);
 }
 
 // Helper function to reduce hit points and remove the body if destroyed

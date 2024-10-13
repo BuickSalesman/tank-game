@@ -1,4 +1,3 @@
-
 //#region MOUSE EVENTS
 
 Events.on(mouseConstraint, "mousedown", function (event) {
@@ -717,47 +716,8 @@ function releaseAndApplyForce(endingMousePosition) {
 }
 //#endregion MOVE AND SHOOT FUNCTIONS
 
-//#region COIN FLIP FUNCTIONS
-function coinFlip() {
-  // Randomly decide which player goes first (50% chance for each)
-  const result = Math.random() < 0.5 ? PLAYER_ONE : PLAYER_TWO;
-
-  // Set the current player's turn based on the coin flip result
-  currentPlayerTurn = result;
-
-  // Display the result in the console or on the UI
-  alert(`Player ${currentPlayerTurn} wins the coin flip and goes first!`);
-}
-//#endregion COIN FLIP FUNCTIONS
-
-//#region WIN OR LOSE FUNCTIONS
-function checkAllTanksDestroyed() {
-  const player1TanksDestroyed = tank1.hitPoints <= 0 && tank2.hitPoints <= 0;
-  const player2TanksDestroyed = tank3.hitPoints <= 0 && tank4.hitPoints <= 0;
-
-  if (player1TanksDestroyed) {
-    setTimeout(() => {
-      alert("Player 2 wins! Dismiss this to replay.");
-      location.reload(); // Refresh the page to restart the game
-    }, 1000);
-  } else if (player2TanksDestroyed) {
-    setTimeout(() => {
-      alert("Player 1 wins! Dismiss this to replay.");
-      locatio n.reload(); // Refresh the page to restart the game
-    }, 1000);
-  }
-}
-//#endregion WIN OR LOSE FUNCTIONS
-
 //#region RULZ FUNCTIONS
-function openModal() {
-  rulesModal.style.display = "block";
-}
 
-// Function to Close Modal
-function closeModal() {
-  rulesModal.style.display = "none";
-}
 //#endregion RULZ FUNCTIONS
 
 //#endregion FUNCTIONS
