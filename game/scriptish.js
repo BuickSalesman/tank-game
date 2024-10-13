@@ -15,115 +15,13 @@ for (let i = 1; i <= 25; i++) {
 
 //#region MATTER AND SOCKET SETUP
 
-//Disable gravity.
-engine.world.gravity.y = 0;
-engine.world.gravity.x = 0;
-
-//Run renderer.
-Render.run(render);
-
-//Run the runner, this allows the engine to be updated for dynamic use within the browser.
-Runner.run(runner, engine);
-
-//Add the ability for mouse input into the physics world.
-World.add(world, mouseConstraint);
-
 //REFACTOR
-startDrawTimer();
 
 //#endregion MATTER AND SOCKET SETUP
 
 //#region EVENT HANDLERS
 
-//#region AFTERRENDER HANDLER
-Events.on(render, "afterRender", function () {
-  drawDividingLine();
-  draw();
-});
-//#endregion AFTERRENDER HANDLER
-
-//#region BEFOREUPDATE HANDLER
-Events.on(engine, "beforeUpdate", () => {
-  if (currentGameState === GameState.GAME_RUNNING) {
-    if (isMouseDown && isMouseMoving) {
-      if (
-        (selectedUnit === turret1 ||
-          selectedUnit === turret2 ||
-          selectedUnit === turret3 ||
-          selectedUnit === turret4) &&
-        actionMode === "move"
-      ) {
-        return;
-      } else {
-        increasePower();
-      }
-    }
-
-    // Apply wobble effect regardless of mouse movement
-    if (isWobbling && selectedUnit) {
-      applyWobbleEffect();
-    }
-  }
-});
-
-//#endregion BEFOREUPDATE HANDLER
-
-//#region AFTERUPDATE HANDLER
-Events.on(engine, "afterUpdate", function () {
-  if (shell !== null) {
-    const velocityMagnitude = Math.sqrt(shell.velocity.x * shell.velocity.x + shell.velocity.y * shell.velocity.y);
-
-    // Set a small threshold value for determining when the shell is "resting."
-    if (velocityMagnitude < 0.1) {
-      // Adjust this value as necessary
-      World.remove(world, shell);
-      shell = null;
-    }
-  }
-
-  tanks.forEach(function (tank) {
-    const speed = Math.hypot(tank.velocity.x, tank.velocity.y);
-    if (speed < 0.1) {
-      // Stop any residual motion
-      Body.setVelocity(tank, { x: 0, y: 0 });
-      Body.setAngularVelocity(tank, 0);
-
-      if (!tank.fixedConstraint) {
-        // Create a constraint to fix the tank's position
-        tank.fixedConstraint = Constraint.create({
-          bodyA: tank,
-          pointB: { x: tank.position.x, y: tank.position.y },
-          stiffness: 1,
-          length: 0,
-          render: {
-            visible: false,
-          },
-        });
-
-        World.add(engine.world, tank.fixedConstraint);
-      }
-    }
-  });
-});
-//#endregion AFTERUPDATE HANDLER
-
 //#region BUTTON EVENT HANDLERS
-document.getElementById("moveButton").addEventListener("click", function () {
-  actionMode = "move";
-});
-
-document.getElementById("shootButton").addEventListener("click", function () {
-  actionMode = "shoot";
-});
-
-rulesButton.addEventListener("click", openModal);
-closeButton.addEventListener("click", closeModal);
-
-window.addEventListener("click", function (event) {
-  if (event.target === rulesModal) {
-    closeModal();
-  }
-});
 
 document.getElementById("endDrawButton").addEventListener("click", function () {
   if (currentGameState === GameState.PRE_GAME) {
@@ -233,26 +131,6 @@ Events.on(engine, "collisionStart", function (event) {
 //#endregion COLLISION HANDLERS
 
 //#endregion EVENT HANDLERS
-
-//#region BODY CREATION
-
-//Add boundary walls to the game world.
-World.add(world, walls);
-
-//Add tank(s) to the game world.
-World.add(world, tanks);
-
-//Add reactor(s) to the game world.
-World.add(world, reactors);
-
-//Add fortress(es) to the game world.
-World.add(world, fortresses);
-fortressNoDrawZone();
-
-//Add turret(s) to the game world.
-World.add(world, turrets);
-
-//#endregion BODY CREATIONS
 
 //#region MOUSE EVENTS
 

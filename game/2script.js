@@ -28,6 +28,12 @@ const physicsCanvas = document.getElementById("physicsCanvas"); // For Matter.js
 // Declare the power meter.
 const powerMeterFill = document.getElementById("powerMeterFill");
 
+// Declare the move button.
+const moveButton = document.getElementById("moveButton");
+
+// Declare the shoot button.
+const shootButton = document.getElementById("shootButton");
+
 // Declare the rules button.
 const rulesButton = document.getElementById("rulzButton");
 
@@ -283,8 +289,14 @@ const maxInkPerShape = baseHeight * 0.6;
 let totalInkUsed = 0;
 
 //#region DRAWING MARGIN VARIABLES
+
+// Declare width of the drawing margin so that it is wide enough for tanks to pass through.
 const drawingMarginX = tankSize + width * 0.02;
+
+// Declare height of the drawing margin so that it is high enough for tanks to pass through.
 const drawingMarginY = tankSize + height * 0.02;
+
+// Declare height of the margin on either side of the dividing line so that it is big enough for tanks to pass through.
 const dividingLineMargin = tankSize + height * 0.005;
 
 // Declare an array to store all no drawing zones.
@@ -378,3 +390,176 @@ let turnTimerInterval = null;
 let hasMovedOrShotThisTurn = false;
 
 //#endregion VARIABLES
+
+// SOCKET SETUP
+
+//#endregion SOCKET SETUP
+
+//#region WORLD SETUP
+
+//Disable gravity.
+engine.world.gravity.y = 0;
+engine.world.gravity.x = 0;
+
+//Run renderer.
+Render.run(render);
+
+//Run the runner, this allows the engine to be updated for dynamic use within the browser.
+Runner.run(runner, engine);
+
+//Add the ability for mouse input into the physics world.
+World.add(world, mouseConstraint);
+
+//#region BODY CREATION
+
+// Add boundary walls to the game world.
+World.add(world, walls);
+
+// Add tank(s) to the game world.
+World.add(world, tanks);
+
+// Add reactor(s) to the game world.
+World.add(world, reactors);
+
+// Add fortress(es) to the game world.
+World.add(world, fortresses);
+
+// Add turret(s) to the game world.
+World.add(world, turrets);
+
+//#endregion BODY CREATIONS
+
+// Add the fortres no draw zones to the drawing canvas.
+fortressNoDrawZone();
+
+// Start the game with the draw phase!
+initializeDrawPhase();
+
+//#endregion WORLD SETUP
+
+//#region EVENT HANDLERS
+
+//#region AFTER RENDER HANDLER
+Events.on(render, "afterRender", function () {
+  // Redraw the diving line after every egine tick.
+  drawDividingLine();
+
+  // Add the ability to draw after every engine tick, provided it is the draw phase.
+  draw();
+});
+
+//#endregion AFTER RENDER HANDLER
+
+//#region BEFORE UPDATE HANDLER
+Events.on(engine, "beforeUpdate", () => {
+  if (currentGameState === GameState.GAME_RUNNING) {
+    if (isMouseDown && isMouseMoving) {
+      // Ensure power meter cannot increase if the action mode is "move" and the selected unit is a turret.
+      processTurretControl();
+    }
+
+    // Apply wobble effect if selected unit is a tank.
+    if (isWobbling && selectedUnit) {
+      applyWobbleEffect();
+    }
+  }
+});
+
+//#endregion BEFORE UPDATE HANDLER
+
+//#region AFTER UPDATE HANDLER
+
+Events.on(engine, "afterUpdate", function () {
+  // Handle the resting state of the shell.
+  handleShellResting();
+
+  // Handle the resting state of tanks.
+  tanks.forEach(function (tank) {
+    if (isResting(tank)) {
+      fixTankPosition(tank);
+    }
+  });
+});
+
+//#endregion AFTER UPDATE HANDLER
+
+//#region BUTTON EVENT HANDLERS
+
+// Change action mode to "move" if move button is clicked.
+moveButton.addEventListener("click", function () {
+  actionMode = "move";
+});
+
+// Change action mode to "shoot" if shoot button is clicked.
+shootButton.addEventListener("click", function () {
+  actionMode = "shoot";
+});
+
+// Open rules modal when rules button is clicked.
+rulesButton.addEventListener("click", openModal);
+
+// Close modal when close button is clicked.
+closeButton.addEventListener("click", closeModal);
+
+// Close modal if user clicks outside the children of the rules modal.
+window.addEventListener("click", function (event) {
+  if (event.target === rulesModal) {
+    closeModal();
+  }
+});
+
+//#endregion BUTTON EVENT HANDLERS
+
+//#endregion EVENT HANDLERS
+
+//#region BEFORE UPDATE HELPER FUNCTIONS
+
+// Helper function to check if the selected unit is one of the turrets
+function isSelectedTurret(unit) {
+  return turrets.includes(unit);
+}
+
+// Helper function to handle the logic when the mouse is down and moving
+function processTurretControl() {
+  if (isSelectedTurret(selectedUnit) && actionMode === "move") {
+    return; // Do nothing if the selected turret is in "move" action mode
+  }
+  increasePower(); // Otherwise, increase power
+}
+
+//#endregion BEFORE UPDATE HELPER FUNCTIONS
+
+//#region AFTER UPDATE HELPER FUNCTIONS
+
+// Helper function to check if a body is resting (i.e., has negligible velocity).
+function isResting(body, threshold = 0.1) {
+  const velocityMagnitude = Math.hypot(body.velocity.x, body.velocity.y);
+  return velocityMagnitude < threshold;
+}
+
+// Helper function to stop any residual motion and fix the tank's position.
+function fixTankPosition(tank) {
+  Body.setVelocity(tank, { x: 0, y: 0 });
+  Body.setAngularVelocity(tank, 0);
+
+  if (!tank.fixedConstraint) {
+    tank.fixedConstraint = Constraint.create({
+      bodyA: tank,
+      pointB: { x: tank.position.x, y: tank.position.y },
+      stiffness: 1,
+      length: 0,
+      render: { visible: false },
+    });
+    World.add(engine.world, tank.fixedConstraint);
+  }
+}
+
+// Helper function to handle the removal of the shell when resting.
+function handleShellResting() {
+  if (shell !== null && isResting(shell)) {
+    World.remove(world, shell);
+    shell = null;
+  }
+}
+
+//#endregion AFTER UPDATE HELPER FUNCTIONS
