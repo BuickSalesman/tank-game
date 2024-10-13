@@ -47,7 +47,7 @@ const rulesModal = document.getElementById("rulesModal");
 const endDrawButton = document.getElementById("endDrawButton");
 
 // Declare the timer display.
-const drawTimerDisplay = document.getElementById("Timer");
+const timerElement = document.getElementById("Timer");
 
 //#endregion HTML ELEMENT VARIABLES
 
@@ -377,24 +377,79 @@ const wobbleAmplitude = 0.1;
 // Declare variable to store which player's turn it is.
 let currentPlayerTurn = PLAYER_ONE;
 
-// Declare how long the drawing phase is (in seconds).
-let drawTimeLeft = 120;
+// Define timer durations in seconds
+const DRAW_PHASE_DURATION = 75;
+const TURN_PHASE_DURATION = 30;
 
-// Declare variable for holding the interval ID for the draw phase timer.
-let drawTimerInterval = null;
+// Declare timer instances
+let drawTimer = null;
+let turnTimer = null;
 
-// Declare how long a battle phase turn is (in seconds).
-let turnTimeLeft = 30;
-
-// Declare variable for holding the interval ID for the turn timer. It is cleared when the turn ends.
-let turnTimerInterval = null;
-
-// Declare variable to store whether a player has taken an action this turn. The turn ends after they have taken an action.
+// Declare variable to store whether a player has taken an action this turn.
 let hasMovedOrShotThisTurn = false;
+
+//#endregion TURN TIMER VARIABLES
 
 //#endregion VARIABLES
 
-// SOCKET SETUP
+//#region CLASSES
+//#region TIMER CLASS
+
+class Timer {
+  /**
+   * Creates a new Timer instance.
+   * @param {number} duration - The duration of the timer in seconds.
+   * @param {Function} onTick - Callback invoked every second with the remaining time.
+   * @param {Function} onEnd - Callback invoked when the timer reaches zero.
+   */
+  constructor(duration, onTick, onEnd) {
+    this.duration = duration;
+    this.timeLeft = duration;
+    this.onTick = onTick;
+    this.onEnd = onEnd;
+    this.intervalId = null;
+  }
+
+  /**
+   * Starts the timer.
+   */
+  start() {
+    this.timeLeft = this.duration;
+    this.onTick(this.timeLeft);
+    this.intervalId = setInterval(() => {
+      this.timeLeft--;
+      this.onTick(this.timeLeft);
+      if (this.timeLeft <= 0) {
+        this.stop();
+        this.onEnd();
+      }
+    }, 1000);
+  }
+
+  /**
+   * Stops the timer.
+   */
+  stop() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+
+  /**
+   * Resets the timer to its initial duration.
+   */
+  reset() {
+    this.stop();
+    this.timeLeft = this.duration;
+    this.onTick(this.timeLeft);
+  }
+}
+
+//#endregion TIMER CLASS
+//#endregion CLASSES
+
+//#region SOCKET SETUP
 
 //#endregion SOCKET SETUP
 
@@ -443,12 +498,15 @@ initializeDrawPhase();
 //#region EVENT HANDLERS
 
 //#region AFTER RENDER HANDLER
+// After Render Handler
 Events.on(render, "afterRender", function () {
-  // Redraw the diving line after every egine tick.
-  drawDividingLine();
+  // Redraw the dividing line and drawings after every engine tick.
+  updateAfterRender();
 
   // Add the ability to draw after every engine tick, provided it is the draw phase.
-  draw();
+  if (currentGameState === GameState.PRE_GAME) {
+    draw(); // Ensure that the draw function is called during the draw phase
+  }
 });
 
 //#endregion AFTER RENDER HANDLER
@@ -499,15 +557,15 @@ shootButton.addEventListener("click", function () {
 });
 
 // Open rules modal when rules button is clicked.
-rulesButton.addEventListener("click", openModal);
+// rulesButton.addEventListener("click", openModal);
 
 // Close modal when close button is clicked.
-closeButton.addEventListener("click", closeModal);
+// closeButton.addEventListener("click", closeModal);
 
 // Close modal if user clicks outside the children of the rules modal.
 window.addEventListener("click", function (event) {
   if (event.target === rulesModal) {
-    closeModal();
+    // closeModal();
   }
 });
 
@@ -573,7 +631,7 @@ Events.on(mouseConstraint, "mousedown", function (event) {
     //shoot stuff
     isMouseMoving = false;
 
-    saveClickPoint(event);
+    // saveClickPoint(event);
   }
   if (currentGameState === GameState.POST_GAME) {
     //restart stuff
@@ -601,8 +659,8 @@ Events.on(mouseConstraint, "mouseup", function (event) {
   }
   if (currentGameState === GameState.GAME_RUNNING) {
     //shoot stuff
-    const endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y };
-    releaseAndApplyForce(endingMousePosition);
+    endingMousePosition = { x: event.mouse.position.x, y: event.mouse.position.y };
+    // releaseAndApplyForce(endingMousePosition);
   }
   if (currentGameState === GameState.POST_GAME) {
     //restart stuff
@@ -614,78 +672,609 @@ Events.on(mouseConstraint, "mouseup", function (event) {
 //#region FUNCTIONS
 
 //#region TURN AND TIMER FUNCTIONS
-// Function to start the draw timer
-function startDrawTimer() {
-  drawTimeLeft = 75; // Reset to desired draw phase duration
-  updateDrawTimerDisplay();
 
-  drawTimerInterval = setInterval(() => {
-    drawTimeLeft--;
-    updateDrawTimerDisplay();
-
-    if (drawTimeLeft <= 0) {
-      clearInterval(drawTimerInterval);
-      endDrawPhase();
-    }
-  }, 1000); // Update every second
-}
-
-function updateDrawTimerDisplay() {
-  if (drawTimerDisplay) {
-    drawTimerDisplay.textContent = `${drawTimeLeft}`;
-  }
-}
-
-function endDrawPhase() {
-  clearInterval(drawTimerInterval);
-  drawTimerInterval = null;
-  currentGameState = GameState.GAME_RUNNING;
-  createBodiesFromShapes();
-  removeFortressNoDrawZones();
-  setTimeout(() => {
-    coinFlip();
-  }, 500);
-  startTurnTimer();
-}
-
-// Initialize the draw timer  game starts
+/**
+ * Initializes and starts the draw phase timer.
+ */
 function initializeDrawPhase() {
-  if ((currentGameState = GameState.PRE_GAME)) {
-    startDrawTimer();
+  if (currentGameState === GameState.PRE_GAME) {
+    // Fixed comparison
+    drawTimer = new Timer(DRAW_PHASE_DURATION, updateDrawTimerDisplay, endDrawPhase);
+    drawTimer.start();
   }
 }
 
+/**
+ * Initializes and starts the turn timer.
+ */
 function startTurnTimer() {
   hasMovedOrShotThisTurn = false;
-  turnTimeLeft = 46; // Reset turn time
-  if (turnTimerInterval) {
-    clearInterval(turnTimerInterval);
-  }
-  turnTimerInterval = setInterval(() => {
-    turnTimeLeft--;
-    updateTurnTimerDisplay(); // Update UI
-    if (turnTimeLeft <= 0) {
-      clearInterval(turnTimerInterval);
-      endTurn();
-    }
-  }, 1000); // Update every second
+  turnTimer = new Timer(TURN_PHASE_DURATION, updateTurnTimerDisplay, endTurn);
+  turnTimer.start();
 }
 
-function endTurn() {
-  if (turnTimerInterval) {
-    clearInterval(turnTimerInterval);
-    turnTimerInterval = null;
+/**
+ * Updates the draw timer display.
+ * @param {number} timeLeft - The remaining time in seconds.
+ */
+function updateDrawTimerDisplay(timeLeft) {
+  if (timerElement) {
+    timerElement.textContent = `${timeLeft}`;
   }
+}
+
+/**
+ * Updates the turn timer display.
+ * @param {number} timeLeft - The remaining time in seconds.
+ */
+function updateTurnTimerDisplay(timeLeft) {
+  if (timerElement) {
+    timerElement.textContent = `${timeLeft}`;
+  }
+}
+
+/**
+ * Ends the current turn and switches to the next player.
+ */
+function endTurn() {
   currentPlayerTurn = currentPlayerTurn === PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
   startTurnTimer();
 }
 
-function updateTurnTimerDisplay() {
-  const timerElement = document.getElementById("Timer");
-  timerElement.textContent = `${turnTimeLeft}`;
-}
+/**
+ * Finalizes the drawing phase after both players are done.
+ */
 
 //#endregion TURN AND TIMER FUNCTIONS
+
+//#region DRAWING FUNCTIONS
+
+//#region NO-DRAW ZONES FUNCTIONS
+
+/**
+ * Creates no-draw zones around fortresses to prevent overlapping drawings.
+ */
+function fortressNoDrawZone() {
+  fortresses.forEach((fortress) => {
+    const zone = createRectangularZone(
+      fortress.position.x,
+      fortress.position.y,
+      fortressWidth,
+      fortressHeight,
+      baseHeight * 0.05
+    );
+    noDrawZones.push(zone);
+  });
+}
+
+/**
+ * Creates a rectangular no-draw zone with padding.
+ * @param {number} centerX - X-coordinate of the center.
+ * @param {number} centerY - Y-coordinate of the center.
+ * @param {number} width - Width of the fortress.
+ * @param {number} height - Height of the fortress.
+ * @param {number} padding - Additional padding around the fortress.
+ * @returns {Array} Array of points defining the rectangle.
+ */
+function createRectangularZone(centerX, centerY, width, height, padding) {
+  const halfWidth = width / 2 + padding;
+  const halfHeight = height / 2 + padding;
+
+  return [
+    { x: centerX - halfWidth, y: centerY - halfHeight }, // Top-Left
+    { x: centerX + halfWidth, y: centerY - halfHeight }, // Top-Right
+    { x: centerX + halfWidth, y: centerY + halfHeight }, // Bottom-Right
+    { x: centerX - halfWidth, y: centerY + halfHeight }, // Bottom-Left
+  ];
+}
+
+/**
+ * Draws all no-draw zones on the canvas.
+ */
+function drawNoDrawZones() {
+  drawCtx.strokeStyle = "red";
+  drawCtx.lineWidth = 2;
+  noDrawZones.forEach((zone) => {
+    drawCtx.beginPath();
+    drawCtx.moveTo(zone[0].x, zone[0].y);
+    for (let i = 1; i < zone.length; i++) {
+      drawCtx.lineTo(zone[i].x, zone[i].y);
+    }
+    drawCtx.closePath();
+    drawCtx.stroke();
+
+    // Draw the X inside the rectangle
+    drawCtx.beginPath();
+    // Diagonal from Top-Left to Bottom-Right
+    drawCtx.moveTo(zone[0].x, zone[0].y);
+    drawCtx.lineTo(zone[2].x, zone[2].y);
+    // Diagonal from Top-Right to Bottom-Left
+    drawCtx.moveTo(zone[1].x, zone[1].y);
+    drawCtx.lineTo(zone[3].x, zone[3].y);
+    drawCtx.stroke();
+  });
+}
+
+/**
+ * Clears all no-draw zones from the canvas.
+ */
+function removeFortressNoDrawZones() {
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  noDrawZones = [];
+}
+
+//#endregion NO-DRAW ZONES FUNCTIONS
+
+//#region EXPLOSION FUNCTIONS
+
+/**
+ * Draws an explosion animation at the specified coordinates.
+ * @param {CanvasRenderingContext2D} context - The drawing context.
+ * @param {number} x - X-coordinate of the explosion center.
+ * @param {number} y - Y-coordinate of the explosion center.
+ * @param {number} frame - Current frame index.
+ */
+function handleExplosion(context, x, y, frame = 0) {
+  if (frame < explosionFrames.length) {
+    context.clearRect(x - 50, y - 50, 100, 100);
+    context.drawImage(explosionFrames[frame], x - 50, y - 50, 100, 100); // Adjust size and position as needed
+    setTimeout(() => handleExplosion(context, x, y, frame + 1), 45); // Advance to the next frame every 45ms
+  }
+}
+
+//#endregion EXPLOSION FUNCTIONS
+
+//#region DIVIDING LINE FUNCTIONS
+
+/**
+ * Draws the dividing line on the canvas.
+ */
+function drawDividingLine() {
+  drawCtx.beginPath();
+  drawCtx.moveTo(0, dividingLine);
+  drawCtx.lineTo(drawCanvas.width, dividingLine);
+  drawCtx.strokeStyle = "black";
+  drawCtx.lineWidth = 2;
+  drawCtx.stroke();
+}
+
+//#endregion DIVIDING LINE FUNCTIONS
+
+//#region SHAPE DRAWING FUNCTIONS
+
+/**
+ * Redraws all existing shapes on the canvas.
+ */
+function redrawAllShapes() {
+  allPaths.forEach((path) => {
+    if (path.length > 0) {
+      drawCtx.beginPath();
+      drawCtx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        drawCtx.lineTo(path[i].x, path[i].y);
+      }
+      drawCtx.closePath();
+      drawCtx.strokeStyle = "blue";
+      drawCtx.lineWidth = 2;
+      drawCtx.stroke();
+    }
+  });
+
+  // Re-draw no-draw zones if in pre-game state
+  if (currentGameState === GameState.PRE_GAME) {
+    drawNoDrawZones();
+  }
+}
+
+/**
+ * Generates all points along a line using linear interpolation.
+ * @param {number} x0 - Starting x-coordinate.
+ * @param {number} y0 - Starting y-coordinate.
+ * @param {number} x1 - Ending x-coordinate.
+ * @param {number} y1 - Ending y-coordinate.
+ * @returns {Object[]} Array of points along the line.
+ */
+function getLinePoints(x0, y0, x1, y1) {
+  const points = [];
+
+  x0 = Math.round(x0);
+  y0 = Math.round(y0);
+  x1 = Math.round(x1);
+  y1 = Math.round(y1);
+
+  let dx = x1 - x0;
+  let dy = y1 - y0;
+
+  let steps = Math.max(Math.abs(dx), Math.abs(dy));
+  if (steps === 0) {
+    points.push({ x: x0, y: y0 });
+    return points;
+  }
+
+  let xStep = dx / steps;
+  let yStep = dy / steps;
+
+  let x = x0;
+  let y = y0;
+
+  for (let i = 0; i <= steps; i++) {
+    points.push({ x: Math.round(x), y: Math.round(y) });
+    x += xStep;
+    y += yStep;
+  }
+
+  return points;
+}
+
+/**
+ * Checks if two polygons overlap.
+ * @param {Object[]} polygonA - First polygon defined by an array of points.
+ * @param {Object[]} polygonB - Second polygon defined by an array of points.
+ * @returns {boolean} True if polygons overlap, else false.
+ */
+function polygonsOverlap(polygonA, polygonB) {
+  // Check if any edges of polygonA intersect with any edges of polygonB
+  for (let i = 0; i < polygonA.length; i++) {
+    const a1 = polygonA[i];
+    const a2 = polygonA[(i + 1) % polygonA.length];
+
+    for (let j = 0; j < polygonB.length; j++) {
+      const b1 = polygonB[j];
+      const b2 = polygonB[(j + 1) % polygonB.length];
+
+      if (doLineSegmentsIntersect(a1, a2, b1, b2)) {
+        return true; // Polygons overlap
+      }
+    }
+  }
+
+  // Additionally, check if one polygon is completely inside another
+  if (isPointInPolygon(polygonA[0], polygonB) || isPointInPolygon(polygonB[0], polygonA)) {
+    return true;
+  }
+
+  return false; // Polygons do not overlap
+}
+
+/**
+ * Determines if two line segments intersect.
+ * @param {Object} p0 - Start point of first line segment.
+ * @param {Object} p1 - End point of first line segment.
+ * @param {Object} p2 - Start point of second line segment.
+ * @param {Object} p3 - End point of second line segment.
+ * @returns {boolean} True if segments intersect, else false.
+ */
+function doLineSegmentsIntersect(p0, p1, p2, p3) {
+  const s1X = p1.x - p0.x;
+  const s1Y = p1.y - p0.y;
+  const s2X = p3.x - p2.x;
+  const s2Y = p3.y - p2.y;
+
+  const denominator = -s2X * s1Y + s1X * s2Y;
+  if (denominator === 0) return false; // Lines are parallel
+
+  const s = (-s1Y * (p0.x - p2.x) + s1X * (p0.y - p2.y)) / denominator;
+  const t = (s2X * (p0.y - p2.y) - s2Y * (p0.x - p2.x)) / denominator;
+
+  if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+    return true; // Collision detected
+  }
+
+  return false; // No collision
+}
+
+/**
+ * Checks if a point is inside a polygon using the ray-casting algorithm.
+ * @param {Object} point - The point to check.
+ * @param {Object[]} polygon - The polygon defined by an array of points.
+ * @returns {boolean} True if the point is inside the polygon, else false.
+ */
+function isPointInPolygon(point, polygon) {
+  let collision = false;
+
+  let next = 0;
+  for (let current = 0; current < polygon.length; current++) {
+    next = (current + 1) % polygon.length;
+
+    const vc = polygon[current];
+    const vn = polygon[next];
+
+    if (
+      vc.y > point.y !== vn.y > point.y &&
+      point.x < ((vn.x - vc.x) * (point.y - vc.y)) / (vn.y - vc.y + 0.00001) + vc.x
+    ) {
+      collision = !collision;
+    }
+  }
+  return collision;
+}
+
+/**
+ * Redraws all existing shapes and the dividing line on the canvas.
+ */
+function redrawCanvas() {
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  drawDividingLine();
+  redrawAllShapes();
+}
+
+/**
+ * Generates and adds Matter.js bodies from drawn shapes.
+ */
+function createBodiesFromShapes() {
+  for (let i = 0; i < allPaths.length; i++) {
+    const path = allPaths[i];
+
+    // Create circles along the line segments of the path
+    const circleRadius = 2; // Adjust the radius as needed
+
+    for (let j = 0; j < path.length - 1; j++) {
+      const startPoint = path[j];
+      const endPoint = path[j + 1];
+
+      // Use linear interpolation to get every point along the line
+      const points = getLinePoints(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+
+      points.forEach((point) => {
+        const circle = Bodies.circle(point.x, point.y, circleRadius, {
+          isStatic: true,
+          label: "Shape",
+          render: { fillStyle: "black" },
+          collisionFilter: {
+            group: 0,
+            category: CATEGORY_SHAPE,
+            mask: CATEGORY_SHELL | CATEGORY_TANK,
+          },
+          friction: 0.005,
+          restitution: 0,
+        });
+        World.add(engine.world, circle);
+      });
+    }
+  }
+
+  allPaths = [];
+}
+
+/**
+ * Handles the drawing logic during mouse move events.
+ * @param {MouseEvent} event - The mouse event.
+ */
+function draw(event) {
+  if (currentGameState !== GameState.PRE_GAME) {
+    return;
+  }
+  if (!isDrawing) return;
+
+  const mousePosition = { ...mouseConstraint.mouse.position };
+
+  // Enforce drawing area per player
+  if (currentPlayerDrawing === PLAYER_ONE) {
+    mousePosition.y = Math.max(mousePosition.y, dividingLine + dividingLineMargin);
+  } else if (currentPlayerDrawing === PLAYER_TWO) {
+    mousePosition.y = Math.min(mousePosition.y, dividingLine - dividingLineMargin);
+  }
+
+  // Clamp mouse position within drawable area horizontally
+  mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
+
+  // Clamp mouse position within drawable area vertically
+  mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
+
+  // Calculate the length of the new segment
+  const lastPoint = drawingPath[drawingPath.length - 1];
+  const dx = mousePosition.x - lastPoint.x;
+  const dy = mousePosition.y - lastPoint.y;
+  const segmentLength = Math.hypot(dx, dy);
+
+  // Check if adding this segment would exceed max ink
+  if (totalInkUsed + segmentLength > maxInkPerShape) {
+    // Limit the segment length to the remaining ink
+    const remainingInk = maxInkPerShape - totalInkUsed;
+    const ratio = remainingInk / segmentLength;
+    if (ratio > 0) {
+      const limitedX = lastPoint.x + dx * ratio;
+      const limitedY = lastPoint.y + dy * ratio;
+      drawingPath.push({ x: limitedX, y: limitedY });
+      totalInkUsed = maxInkPerShape;
+    }
+    // Stop drawing
+    isDrawing = false;
+    endDrawing();
+    return;
+  } else {
+    // Update totalInkUsed and continue drawing
+    totalInkUsed += segmentLength;
+    drawingPath.push(mousePosition);
+  }
+
+  // Redraw the canvas
+  redrawCanvas();
+
+  // Draw the current path
+  drawCtx.beginPath();
+  drawCtx.moveTo(drawingPath[0].x, drawingPath[0].y);
+  for (let i = 1; i < drawingPath.length; i++) {
+    drawCtx.lineTo(drawingPath[i].x, drawingPath[i].y);
+  }
+
+  // Optionally change color based on ink usage
+  const inkUsageRatio = totalInkUsed / maxInkPerShape;
+  if (inkUsageRatio > 0.66) {
+    drawCtx.strokeStyle = "red";
+  } else if (inkUsageRatio > 0.33) {
+    drawCtx.strokeStyle = "orange";
+  } else {
+    drawCtx.strokeStyle = "blue";
+  }
+  drawCtx.lineWidth = 2;
+  drawCtx.stroke();
+}
+
+/**
+ * Handles the completion of a drawing action.
+ */
+function endDrawing() {
+  // End drawing
+  isDrawing = false;
+
+  if (drawingPath.length > 1) {
+    const firstPoint = drawingPath[0];
+    const lastPoint = drawingPath[drawingPath.length - 1];
+    const distance = Math.hypot(lastPoint.x - firstPoint.x, lastPoint.y - firstPoint.y);
+    const snapThreshold = 1;
+
+    if (distance <= snapThreshold) {
+      drawingPath[drawingPath.length - 1] = { x: firstPoint.x, y: firstPoint.y };
+    } else {
+      drawingPath.push({ x: firstPoint.x, y: firstPoint.y });
+    }
+
+    // Before adding the shape, check for overlaps with existing shapes
+    let overlaps = false;
+
+    for (let i = 0; i < allPaths.length; i++) {
+      if (polygonsOverlap(drawingPath, allPaths[i])) {
+        overlaps = true;
+        break;
+      }
+    }
+
+    // Check overlap with no-draw zones
+    if (!overlaps) {
+      for (let i = 0; i < noDrawZones.length; i++) {
+        if (polygonsOverlap(drawingPath, noDrawZones[i])) {
+          overlaps = true;
+          break;
+        }
+      }
+    }
+
+    if (overlaps) {
+      // Optionally alert the user about the invalid shape
+      // alert("Shapes cannot overlap, or be in no draw zones. Try drawing again.");
+
+      // Clear the drawing
+      redrawCanvas();
+    } else {
+      // Shape is valid, add it to allPaths
+      allPaths.push([...drawingPath]);
+
+      // Increment shape count for current player
+      if (currentPlayerDrawing === PLAYER_ONE) {
+        shapeCountPlayer1++;
+        if (shapeCountPlayer1 >= maxShapeCountPlayer1) {
+          // Switch to player 2
+          currentPlayerDrawing = PLAYER_TWO;
+        }
+      } else if (currentPlayerDrawing === PLAYER_TWO) {
+        shapeCountPlayer2++;
+        if (shapeCountPlayer2 >= maxShapeCountPlayer2) {
+          // Both players have finished drawing
+          finalizeDrawingPhase();
+        }
+      }
+
+      // Clear the drawing and re-draw all shapes
+      redrawCanvas();
+    }
+  }
+}
+
+/**
+ * Starts the drawing process when the mouse is pressed.
+ */
+function startDrawing() {
+  if (currentGameState !== GameState.PRE_GAME) {
+    return;
+  }
+  const mousePosition = { ...mouseConstraint.mouse.position };
+
+  // Enforce drawing area per player
+  if (currentPlayerDrawing === PLAYER_ONE) {
+    isDrawingBelow = true;
+    mousePosition.y = Math.max(mousePosition.y, dividingLine + dividingLineMargin);
+  } else if (currentPlayerDrawing === PLAYER_TWO) {
+    isDrawingBelow = false;
+    mousePosition.y = Math.min(mousePosition.y, dividingLine - dividingLineMargin);
+  }
+
+  // Clamp mouse position within drawable area horizontally
+  mousePosition.x = Math.max(drawingMarginX, Math.min(mousePosition.x, width - drawingMarginX));
+
+  // Clamp mouse position within drawable area vertically
+  mousePosition.y = Math.max(drawingMarginY, Math.min(mousePosition.y, height - drawingMarginY));
+
+  totalInkUsed = 0;
+  isDrawing = true;
+  drawingPath = [mousePosition];
+}
+
+/**
+ * Redraws the dividing line and current drawings after each engine tick.
+ */
+function updateAfterRender() {
+  // Redraw the dividing line
+  drawDividingLine();
+
+  // Redraw all shapes and no-draw zones if in pre-game state
+  if (currentGameState === GameState.PRE_GAME) {
+    redrawAllShapes();
+  }
+}
+
+/**
+ * Handles the explosion animation on a specific body.
+ * @param {Matter.Body} body - The body where the explosion occurs.
+ */
+function handleBodyExplosion(body) {
+  handleExplosion(drawCtx, body.position.x, body.position.y, 0);
+}
+
+/**
+ * Finalizes the drawing phase by transitioning the game state.
+ */
+function finalizeDrawingPhase() {
+  if (drawTimer) {
+    drawTimer.stop();
+    drawTimer = null;
+  }
+  endDrawPhase();
+}
+
+//#endregion SHAPE DRAWING FUNCTIONS
+
+//#region END DRAW BUTTON FUNCTIONS
+function isPlayerDrawComplete(player) {
+  if (player === PLAYER_ONE && shapeCountPlayer1 < maxShapeCountPlayer1) {
+    shapeCountPlayer1 = maxShapeCountPlayer1;
+    return true;
+  } else if (player === PLAYER_TWO && shapeCountPlayer2 < maxShapeCountPlayer2) {
+    shapeCountPlayer2 = maxShapeCountPlayer2;
+    return true;
+  }
+  return false;
+}
+
+function switchPlayer() {
+  currentPlayerDrawing = currentPlayerDrawing === PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
+}
+
+function areBothPlayersDoneDrawing() {
+  return shapeCountPlayer1 === maxShapeCountPlayer1 && shapeCountPlayer2 === maxShapeCountPlayer2;
+}
+
+function endDrawPhase() {
+  currentGameState = GameState.GAME_RUNNING;
+  createBodiesFromShapes();
+  removeFortressNoDrawZones();
+  // setTimeout(() => coinFlip(), 500);
+  startTurnTimer();
+}
+
+//#endregion END DRAW BUTTON FUNCTIONS
+
+//#endregion DRAWING FUNCTIONS
 
 //#region BEFORE UPDATE HELPER FUNCTIONS
 
@@ -738,42 +1327,6 @@ function handleShellResting() {
 }
 
 //#endregion AFTER UPDATE HELPER FUNCTIONS
-
-//#region END DRAW BUTTON HELPER FUNCTIONS
-function isPlayerDrawComplete(player) {
-  if (player === PLAYER_ONE && shapeCountPlayer1 < maxShapeCountPlayer1) {
-    shapeCountPlayer1 = maxShapeCountPlayer1;
-    return true;
-  } else if (player === PLAYER_TWO && shapeCountPlayer2 < maxShapeCountPlayer2) {
-    shapeCountPlayer2 = maxShapeCountPlayer2;
-    return true;
-  }
-  return false;
-}
-
-function switchPlayer() {
-  currentPlayerDrawing = currentPlayerDrawing === PLAYER_ONE ? PLAYER_TWO : PLAYER_ONE;
-}
-
-function areBothPlayersDoneDrawing() {
-  return shapeCountPlayer1 === maxShapeCountPlayer1 && shapeCountPlayer2 === maxShapeCountPlayer2;
-}
-
-function finalizeDrawingPhase() {
-  clearInterval(drawTimerInterval);
-  drawTimerInterval = null;
-  endDrawPhase();
-}
-
-function endDrawPhase() {
-  currentGameState = GameState.GAME_RUNNING;
-  createBodiesFromShapes();
-  removeFortressNoDrawZones();
-  setTimeout(() => coinFlip(), 500);
-  startTurnTimer();
-}
-
-//#endregion END DRAW BUTTON HELPER FUNCTIONS
 
 //#region COLLISION HANDLER HELPER FUNCTIONS
 
@@ -848,4 +1401,5 @@ function checkAllTanksDestroyed() {
 }
 
 //#endregion COLLISION HANDLER HELPER FUNCTIONS
+
 //#endregion FUNCTIONS

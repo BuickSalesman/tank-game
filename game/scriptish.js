@@ -1,90 +1,3 @@
-//#endregion MATTER AND SOCKET SETUP
-
-//#region COLLISION HANDLERS
-Events.on(engine, "collisionStart", function (event) {
-  function bodiesMatch(bodyA, bodyB, label1, label2) {
-    return (bodyA.label === label1 && bodyB.label === label2) || (bodyA.label === label2 && bodyB.label === label1);
-  }
-
-  var pairs = event.pairs;
-
-  pairs.forEach((pair) => {
-    const { bodyA, bodyB } = pair;
-
-    const x = (bodyA.position.x + bodyB.position.x) / 2;
-    const y = (bodyA.position.y + bodyB.position.y) / 2;
-
-    // Check if a tank collided with a shell
-    if (bodiesMatch(bodyA, bodyB, "Tank", "Shell")) {
-      drawExplosion(drawCtx, x, y, 0);
-
-      // Identify tank and shell
-      const tank = bodyA.label === "Tank" ? bodyA : bodyB;
-      const shell = bodyA.label === "Shell" ? bodyA : bodyB;
-
-      // Reduce hit points
-      tank.hitPoints -= 1;
-
-      // Remove shell from the world
-      World.remove(engine.world, shell);
-
-      // Check if tank is destroyed
-      if (tank.hitPoints <= 0) {
-        World.remove(engine.world, tank);
-        drawExplosion(drawCtx, tank.position.x, tank.position.y, 0);
-
-        // Call the function to check if all tanks of a player are destroyed
-        checkAllTanksDestroyed();
-      } else {
-        // Optionally, update tank appearance to indicate damage
-        tank.render.strokeStyle = "orange"; // Change color to indicate damage
-      }
-    }
-
-    // Check if a shell collided with a reactor
-    if (bodiesMatch(bodyA, bodyB, "Shell", "Reactor")) {
-      drawExplosion(drawCtx, x, y, 0);
-
-      // Identify reactor and shell
-      const reactor = bodyA.label === "Reactor" ? bodyA : bodyB;
-      const shell = bodyA.label === "Shell" ? bodyA : bodyB;
-
-      // Reduce hit points
-      reactor.hitPoints -= 1;
-
-      // Remove shell from the world
-      World.remove(engine.world, shell);
-
-      // Check if reactor is destroyed
-      if (reactor.hitPoints <= 0) {
-        World.remove(engine.world, reactor);
-        drawExplosion(drawCtx, reactor.position.x, reactor.position.y, 0);
-
-        // Determine which player lost their reactor
-        const losingPlayerId = reactor.playerId;
-        const winningPlayerId = losingPlayerId === 1 ? 2 : 1;
-
-        setTimeout(() => {
-          alert(`Player ${winningPlayerId} wins! Dismiss this to replay.`);
-          location.reload();
-        }, 1000);
-      }
-    }
-
-    if (bodiesMatch(bodyA, bodyB, "Shell", "Shape")) {
-      const shell = bodyA.label === "Shell" ? bodyA : bodyB;
-      World.remove(engine.world, shell);
-    }
-
-    // if (bodiesMatch(bodyA, bodyB, "Tank", "Shape")) {
-    //   console.log("Tank hit shape!");
-    // }
-  });
-});
-
-//#endregion COLLISION HANDLERS
-
-//#endregion EVENT HANDLERS
 
 //#region MOUSE EVENTS
 
@@ -830,7 +743,7 @@ function checkAllTanksDestroyed() {
   } else if (player2TanksDestroyed) {
     setTimeout(() => {
       alert("Player 1 wins! Dismiss this to replay.");
-      location.reload(); // Refresh the page to restart the game
+      locatio n.reload(); // Refresh the page to restart the game
     }, 1000);
   }
 }
