@@ -28,6 +28,18 @@ const physicsCanvas = document.getElementById("physicsCanvas"); // For Matter.js
 // Declare the power meter.
 const powerMeterFill = document.getElementById("powerMeterFill");
 
+// Declare the rules button.
+const rulesButton = document.getElementById("rulzButton");
+
+// Declare the rules modal.
+const rulesModal = document.getElementById("rulzModal");
+
+// Declare the close button within the rules modal.
+const closeButton = document.querySelector(".close-button");
+
+// Declare the timer display.
+const drawTimerDisplay = document.getElementById("Timer");
+
 //#endregion HTML ELEMENT VARIABLES
 
 // Set up gameContainer dimensions.
@@ -239,8 +251,6 @@ let shells = [];
 
 //#region DRAWING VARIABLES
 
-// Declare current player drawing
-
 //#region EXPLOSIONS!!!
 const explosionFrames = Array.from({ length: 25 }, (_, i) => {
   const img = new Image();
@@ -252,7 +262,7 @@ const explosionFrames = Array.from({ length: 25 }, (_, i) => {
 // Declare a dividing line halfway between the top and bottom of the canvas.
 const dividingLine = drawCanvas.height / 2;
 
-// Declare which player will be the first to draw their shapes.
+// Declare variable to store the which player is currently drawing, starting with player 1.
 let currentPlayerDrawing = PLAYER_ONE;
 
 // Declare counter for number of total shapes drawn.
@@ -326,6 +336,45 @@ let isMouseDown = false;
 // Declare if mouse is moving.
 let isMouseMoving = false;
 
+//#region WOBBLE EFFECT VARIABLES
+
+// Declare if an object is wobling.
+let isWobbling = false;
+
+// Declare the moment at which the wobble effect is applied.
+let wobbleStartTime = 0;
+
+// Declare the initial angle of the wobble effect.
+let initialWobbleAngle = 0;
+
+// Declare number of frames between wobble oscilation.
+const wobbleFrequency = 60;
+
+// Declare maximum rotation angle in radians from the neutral position (about 2.86 degrees).
+const wobbleAmplitude = 0.1;
+
+//#endregion WOBBLE EFFECT VARIABLES
+
 //#endregion MOVE AND SHOOT VARIABLES
+
+//#region TURN TIMER VARIABLES
+
+// Declare variable to store which player's turn it is.
+let currentPlayerTurn = PLAYER_ONE;
+
+// Declare how long the drawing phase is (in seconds).
+let drawTimeLeft = 120;
+
+// Declare variable for holding the interval ID for the draw phase timer.
+let drawTimerInterval = null;
+
+// Declare how long a battle phase turn is (in seconds).
+let turnTimeLeft = 30;
+
+// Declare variable for holding the interval ID for the turn timer. It is cleared when the turn ends.
+let turnTimerInterval = null;
+
+// Declare variable to store whether a player has taken an action this turn. The turn ends after they have taken an action.
+let hasMovedOrShotThisTurn = false;
 
 //#endregion VARIABLES

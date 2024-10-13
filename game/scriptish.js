@@ -11,37 +11,6 @@ for (let i = 1; i <= 25; i++) {
 }
 //#endregion EXPLOSIONS!!!!
 
-//#region MOVE AND SHOOT VARIABLES
-
-//#region WOBBLE
-
-let isWobbling = false;
-let wobbleStartTime = 0;
-let initialWobbleAngle = 0;
-const wobbleFrequency = 60; // Controls the speed of the wobble
-const wobbleAmplitude = 0.1; // Maximum rotation angle in radians (about 2.86 degrees)
-
-//#endregion WOBBLE
-//#endregion MOVE AND SHOOT VARIABLES
-
-//#region TURN TIMER VARIABLES
-let currentPlayerTurn = PLAYER_ONE;
-let turnTimeLeft = 45;
-let turnTimerInterval = null;
-let hasMovedOrShotThisTurn = false;
-
-let drawTimeLeft = 120; // Duration of the draw phase in seconds (e.g., 120 seconds)
-let drawTimerInterval = null;
-const drawTimerDisplay = document.getElementById("Timer");
-
-//#endregion TURN TIMER VARIABLES
-
-//#region RULZ VARIABLES
-
-//#endregion RULZ VARIABLES
-const rulesButton = document.getElementById("rulzButton");
-const rulesModal = document.getElementById("rulzModal");
-const closeButton = document.querySelector(".close-button");
 //#endregion VARIABLES
 
 //#region MATTER AND SOCKET SETUP
