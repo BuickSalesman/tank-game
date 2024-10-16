@@ -1,0 +1,248 @@
+@font-face {
+  font-family: "DeskScratch";
+  src: url("../assets/fonts/DeskScratch.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  flex-direction: column;
+}
+
+#bodyContainer {
+  background-image: url("../assets/desk.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+#gameAndPowerContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#gameContainer {
+  position: relative;
+  --aspect-ratio: 0.7071; /* A4 paper ratio */
+  height: 95vh;
+  width: calc(var(--aspect-ratio) * 95vh);
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid #000;
+  margin: 2rem;
+  background-image: url("../assets/paper.jpg");
+  background-size: cover;
+  background-position: center;
+  display: none;
+}
+
+#drawCanvas,
+#physicsCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-block;
+  border: 1px solid #000;
+  background-color: transparent; /* Ensure the background is transparent */
+}
+
+#sideContainer {
+  display: flex;
+  flex-direction: column; /* Stacks power meter, buttons, and timer vertically */
+  align-items: center;
+  display: none;
+}
+
+#powerMeterContainer {
+  position: relative; /* Add this if not already present */
+  display: flex;
+  align-items: flex-end;
+  width: 3rem;
+  height: 60vh;
+  border: 2px solid #000;
+  margin-bottom: 1rem;
+  overflow: hidden; /* Ensure child elements are contained */
+}
+
+#powerMeterFill {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background-color: red;
+  height: 0%; /* Initial height of the power meter fill */
+  z-index: 1; /* Ensure it appears below the zones */
+}
+
+/* Reward Zone Style */
+#rewardZone {
+  position: absolute;
+  bottom: 85%; /* Start at 90% from the bottom */
+  width: 100%;
+  height: 10%; /* Covers 5% height (90% to 95%) */
+  background-color: rgba(0, 255, 0, 0.5); /* Semi-transparent green */
+  z-index: 2;
+}
+
+/* Punishment Zone Style */
+#punishmentZone {
+  position: absolute;
+  bottom: 95%; /* Start at 95% from the bottom */
+  width: 100%;
+  height: 5%; /* Covers 5% height (95% to 100%) */
+  background-color: rgba(255, 0, 0, 0.5); /* Semi-transparent red */
+  z-index: 2;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem; /* Space between buttons and turn timer */
+}
+
+.button {
+  font-family: "DeskScratch";
+  font-size: 1.5rem;
+  -webkit-text-stroke: 0.005rem rgba(200, 200, 200, 0.9);
+  padding: 0.5rem 0.5rem;
+  background-color: rgba(15, 15, 15, 0);
+  border: none;
+  margin: 0 0.5 rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  border-top-left-radius: 255px 15px;
+  border-top-right-radius: 15px 225px;
+  border-bottom-right-radius: 225px 15px;
+  border-bottom-left-radius: 15px 255px;
+}
+
+#joinGameButton {
+  font-size: 3rem;
+}
+
+.button:hover {
+  background-color: rgba(15, 15, 15, 0.2);
+}
+button.lined.thick {
+  border: solid 3px #41403e;
+}
+button.dotted.thick {
+  border: dotted 3px #41403e;
+}
+button.dashed.thick {
+  border: dashed 3px #41403e;
+}
+button.lined.thin {
+  border: solid 2px #41403e;
+}
+button.dotted.thin {
+  border: dotted 2px #41403e;
+}
+button.dashed.thin {
+  border: dashed 2px #41403e;
+}
+
+.button:active {
+  transform: scale(0.98); /* Slightly reduce size to give pressed look */
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5); /* Create inset shadow for pressed effect */
+  background-color: rgba(15, 15, 15, 0.3); /* Slightly darker background on press */
+}
+
+#turnTimerContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#Timer {
+  font-family: "DeskScratch";
+  font-size: 3.2rem;
+  color: rgba(15, 15, 15, 0.9);
+  text-align: center;
+  -webkit-text-stroke: 0.005rem rgba(200, 200, 200, 0.9);
+}
+
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1000; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0, 0, 0, 0.7); /* Black with opacity */
+}
+
+/* Modal Content Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto; /* 5% from the top and centered */
+  padding: 20px;
+  border: 2px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+  max-width: 800px; /* Maximum width */
+  border-radius: 10px;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.3s;
+}
+
+/* Close Button */
+.close-button {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+}
+
+.close-button:hover,
+.close-button:focus {
+  color: #000;
+  text-decoration: none;
+}
+
+/* Fade-in Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Optional: Style for the Rules Button */
+#rulesButton {
+  margin-top: 1rem; /* Space above the button */
+  font-family: "DeskScratch";
+  font-size: 1.5rem;
+  padding: 0.5rem 1rem;
+  background-color: rgba(15, 15, 15, 0.8);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#rulesButton:hover {
+  background-color: rgba(15, 15, 15, 1);
+}
